@@ -74,7 +74,7 @@ def gen_mesh(opt, net, cuda, data, save_path, use_octree=True):
         color = index(image_tensor_hr[:1], uv).detach().cpu().numpy()[0].T
         color = color * 0.5 + 0.5
         save_obj_mesh_with_color(save_path, verts, faces, color)
-       
+        #madonna bestia
     except Exception as e:
         print(e)
         print('Can not create marching cubes at this time.')
