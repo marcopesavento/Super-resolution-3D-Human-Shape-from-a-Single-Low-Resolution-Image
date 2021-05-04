@@ -95,14 +95,17 @@ def train(opt):
             image_tensor_hr = train_data['img_HR'].to(device=cuda)
             calib_tensor = train_data['calib'].to(device=cuda)
             sample_tensor = train_data['samples'].to(device=cuda)
+            print(image_tensor_lr.shape, image_tensor_hr.shape)
+
 
             image_tensor_hr,image_tensor_lr, calib_tensor = reshape_multiview_tensors(image_tensor_hr,image_tensor_lr, calib_tensor)
+            print(image_tensor_lr.shape, image_tensor_hr.shape)
 
             if opt.num_views > 1:
                 sample_tensor = reshape_sample_tensor(sample_tensor, opt.num_views)
 
-            label_tensor_hr = train_data['labels_hr'].to(device=cuda)
-            label_tensor_lr = train_data['labels_lr'].to(device=cuda)
+            label_tensor_hr = train_data['labels_HR'].to(device=cuda)
+            label_tensor_lr = train_data['labels_LR'].to(device=cuda)
             #arrivato qua a modificare
             res, error, error_mlp1, error_mlp2, error_SR = netG.forward(image_tensor_lr,image_tensor_hr, sample_tensor, calib_tensor, labels_lr=label_tensor_lr,labels_hr=label_tensor_hr)
 

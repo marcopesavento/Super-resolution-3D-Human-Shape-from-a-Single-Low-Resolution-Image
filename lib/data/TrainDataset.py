@@ -84,7 +84,7 @@ class TrainDataset(Dataset):
 
         # PIL to tensor
         self.to_tensor = transforms.Compose([
-            #transforms.Resize(self.load_size),
+            #transforms.Resize(self.load_size), qua modificato ma potrebbe essere sbagliato
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])
@@ -99,6 +99,7 @@ class TrainDataset(Dataset):
 
     def get_subjects(self):
         all_subjects = os.listdir(self.RENDER)
+        
         var_subjects = np.loadtxt(os.path.join(self.root, 'val.txt'), dtype=str)
         if len(var_subjects) == 0:
             return all_subjects
@@ -141,6 +142,7 @@ class TrainDataset(Dataset):
         for vid in view_ids:
             param_path = os.path.join(self.PARAM, subject, '%d_%d_%02d.npy' % (vid, pitch, 0))
             render_path = os.path.join(self.RENDER, subject, '%d_%d_%02d.jpg' % (vid, pitch, 0))
+            ##print(render_path)
             mask_path = os.path.join(self.MASK, subject, '%d_%d_%02d.png' % (vid, pitch, 0))
 
             # loading calibration data
@@ -272,12 +274,11 @@ class TrainDataset(Dataset):
             mask_list_HR.append(mask_HR)
             render_list_LR.append(render_LR)
             mask_list_LR.append(mask_LR)
-            #print(len(render_list_HR),len(mask_list_LR),len(render_list_LR),len(mask_list_HR))
+            ###print(len(render_list_HR),len(mask_list_LR),len(render_list_LR),len(mask_list_HR))
             calib_list.append(calib)
-            #print(len(calib_list))
+            ###print(len(calib_list))
             extrinsic_list.append(extrinsic)
-            #print(len(extrinsic_list))
-
+            #print(render_list_LR[0].shape,render_list_HR[0].shape)
         return {
             'img_LR': torch.stack(render_list_LR, dim=0),
             'img_HR': torch.stack(render_list_HR, dim=0),
@@ -294,10 +295,10 @@ class TrainDataset(Dataset):
             torch.manual_seed(1991)
         name_HR=subject[0]+'_HR.obj'
         name_LR=subject[0]+'_LR.obj'
-        print(self.mesh_dic)
+        ##print(self.mesh_dic)
         mesh_HR = self.mesh_dic[name_HR]
         mesh_LR= self.mesh_dic[name_LR]
-        print(name_HR,name_LR)
+        ##print(name_HR,name_LR)
         surface_points, _ = trimesh.sample.sample_surface(mesh_HR, 4 * self.num_sample_inout) #20000 points sampled on the meshes
         sample_points = surface_points + np.random.normal(scale=self.opt.sigma, size=surface_points.shape)
 
@@ -306,35 +307,36 @@ class TrainDataset(Dataset):
         random_points = np.random.rand(self.num_sample_inout // 4, 3) * length + self.B_MIN
         sample_points = np.concatenate([sample_points, random_points], 0)
         np.random.shuffle(sample_points)
-
-        inside_HR = mesh_HR.contains(sample_points)
+        ###print("ok1")
+        inside_HR = mesh_HR.contains(sample_points) #non mi lascia
+        ###print("ok2")
         inside_points_HR = sample_points[inside_HR]
         outside_points_HR = sample_points[np.logical_not(inside_HR)]
-
+        
         inside_LR = mesh_LR.contains(sample_points)
         inside_points_LR = sample_points[inside_LR]
         outside_points_LR = sample_points[np.logical_not(inside_LR)]
-
+        ###print("ok3")
         nin_LR = inside_points_LR.shape[0]
         inside_points_LR = inside_points_LR[
                         :self.num_sample_inout // 2] if nin_LR > self.num_sample_inout // 2 else inside_points_LR
         outside_points_LR = outside_points_LR[
                          :self.num_sample_inout // 2] if nin_LR > self.num_sample_inout // 2 else outside_points_LR[
-                                                                                               :(self.num_sample_inout - nin_LR)]
+                                                                                              :(self.num_sample_inout - nin_LR)]
         nin_HR = inside_points_HR.shape[0]
         inside_points_HR = inside_points_HR[
-                        :self.numR_sample_inout // 2] if nin_HR > self.num_sample_inout // 2 else inside_points_HR
+                        :self.num_sample_inout // 2] if nin_HR > self.num_sample_inout // 2 else inside_points_HR
         outside_points_HR = outside_points_HR[
                          :self.num_sample_inout // 2] if nin_HR > self.num_sample_inout // 2 else outside_points_HR[
                                                                                                :(self.num_sample_inout - nin_HR)]
-                                                             
+        ###print("ok5")                                                     
         samples = np.concatenate([inside_points_HR, outside_points_HR], 0).T
         labels_HR = np.concatenate([np.ones((1, inside_points_HR.shape[0])), np.zeros((1, outside_points_HR.shape[0]))], 1)
         labels_LR = np.concatenate([np.ones((1, inside_points_LR.shape[0])), np.zeros((1, outside_points_LR.shape[0]))], 1)
 
         # save_samples_truncted_prob('out.ply', samples.T, labels.T)
         # exit()
-
+        ###print("ok6")
         samples = torch.Tensor(samples).float()
         labels_LR = torch.Tensor(labels_LR).float()
         labels_HR = torch.Tensor(labels_HR).float()
@@ -413,7 +415,7 @@ class TrainDataset(Dataset):
 
         # name of the subject 'rp_xxxx_xxx'
         subject = os.path.splitext(self.subjects[sid])
-        #print(subject)
+        ###print(subject)
         res = {
             'name': subject,
             'mesh_path_HR': os.path.join(self.OBJ, subject[0] + '_HR.obj'),
@@ -424,15 +426,16 @@ class TrainDataset(Dataset):
             'b_min': self.B_MIN,
             'b_max': self.B_MAX,
         }
-        #print(res)
+        ###print(res)
         render_data = self.get_render(subject[0], num_views=self.num_views, yid=yid, pid=pid,
                                         random_sample=self.opt.random_multiview)
         res.update(render_data) #add images and masks
-
-
+        
+        
         #qua devo mettere low resolution e high resolution! occhio che low resolution mi interessa solo groundtruth
         #mi conviene associare l'object mesh direttamente as input data quindi a subject!
         if self.opt.num_sample_inout:
+           
             sample_data = self.select_sampling_method(subject)
             res.update(sample_data)
         
@@ -449,10 +452,12 @@ class TrainDataset(Dataset):
         if self.num_sample_color:
             color_data = self.get_color_sampling(subject, yid=yid, pid=pid)
             res.update(color_data)
+        ###print(res)
         return res
         # except Exception as e:
-        #     print(e)
+        #     ##print(e)
         #     return self.get_item(index=random.randint(0, self.__len__() - 1))
 
     def __getitem__(self, index):
+        ##print(index)
         return self.get_item(index)

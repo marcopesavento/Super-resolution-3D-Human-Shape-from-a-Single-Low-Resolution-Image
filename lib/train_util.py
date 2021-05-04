@@ -30,7 +30,7 @@ def reshape_multiview_tensors(image_tensor_hr,image_tensor_lr, calib_tensor):
         calib_tensor.shape[3]
     )
 
-    return image_tensor_lr, image_tensor_hr, calib_tensor
+    return image_tensor_hr, image_tensor_lr, calib_tensor
 
 
 def reshape_sample_tensor(sample_tensor, num_views):
