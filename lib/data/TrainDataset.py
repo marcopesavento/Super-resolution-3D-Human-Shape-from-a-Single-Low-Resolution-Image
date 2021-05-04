@@ -84,7 +84,7 @@ class TrainDataset(Dataset):
 
         # PIL to tensor
         self.to_tensor = transforms.Compose([
-            transforms.Resize(self.load_size),
+            #transforms.Resize(self.load_size),
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])
@@ -243,14 +243,19 @@ class TrainDataset(Dataset):
             calib = torch.Tensor(np.matmul(intrinsic, extrinsic)).float()
             extrinsic = torch.Tensor(extrinsic).float()
 
-            mask_LR = mask_HR.resize((x - (x % 2) for x in mask_HR.size))
+            mask_LR = mask_HR.resize((x - (x % 2) for x in mask_HR.size), Image.BICUBIC)
 
-            render_LR = render_HR.resize((x - (x % 2) for x in render_HR.size), Image.NEAREST)
+            render_LR = render_HR.resize((x - (x % 2) for x in render_HR.size))
+
+            mask_LR = mask_HR.resize((x //2 for x in mask_LR.size), Image.NEAREST)
+
+            render_LR = render_HR.resize((x //2 for x in render_LR.size), Image.BICUBIC)
 
             mask_LR = transforms.ToTensor()(mask_LR).float()
            
 
             render_LR = self.to_tensor(render_LR)
+         
             render_LR = mask_LR.expand_as(render_LR) * render_LR
 
             
@@ -260,16 +265,18 @@ class TrainDataset(Dataset):
             mask_HR = transforms.ToTensor()(mask_HR).float()
             
             render_HR = self.to_tensor(render_HR)
-            render_HR = mask_LR.expand_as(render_HR) * render_LR
+            render_HR = mask_HR.expand_as(render_HR) * render_HR
             #mask_LR = transforms.Resize(self.load_size)(mask_LR)
-
+            
             render_list_HR.append(render_HR)
             mask_list_HR.append(mask_HR)
             render_list_LR.append(render_LR)
             mask_list_LR.append(mask_LR)
-
+            #print(len(render_list_HR),len(mask_list_LR),len(render_list_LR),len(mask_list_HR))
             calib_list.append(calib)
+            #print(len(calib_list))
             extrinsic_list.append(extrinsic)
+            #print(len(extrinsic_list))
 
         return {
             'img_LR': torch.stack(render_list_LR, dim=0),
@@ -285,8 +292,9 @@ class TrainDataset(Dataset):
             random.seed(1991)
             np.random.seed(1991)
             torch.manual_seed(1991)
-        name_HR=subject+'_HR.obj'
-        name_LR=subject+'_LR.obj'
+        name_HR=subject[0]+'_HR.obj'
+        name_LR=subject[0]+'_LR.obj'
+        print(self.mesh_dic)
         mesh_HR = self.mesh_dic[name_HR]
         mesh_LR= self.mesh_dic[name_LR]
         print(name_HR,name_LR)
@@ -318,6 +326,7 @@ class TrainDataset(Dataset):
                         :self.numR_sample_inout // 2] if nin_HR > self.num_sample_inout // 2 else inside_points_HR
         outside_points_HR = outside_points_HR[
                          :self.num_sample_inout // 2] if nin_HR > self.num_sample_inout // 2 else outside_points_HR[
+                                                                                               :(self.num_sample_inout - nin_HR)]
                                                              
         samples = np.concatenate([inside_points_HR, outside_points_HR], 0).T
         labels_HR = np.concatenate([np.ones((1, inside_points_HR.shape[0])), np.zeros((1, outside_points_HR.shape[0]))], 1)
@@ -404,18 +413,19 @@ class TrainDataset(Dataset):
 
         # name of the subject 'rp_xxxx_xxx'
         subject = os.path.splitext(self.subjects[sid])
-        print(subject)
+        #print(subject)
         res = {
             'name': subject,
-            'mesh_path_HR': os.path.join(self.OBJ, subject + '_HR.obj'),
-            'mesh_path_LR': os.path.join(self.OBJ, subject + '_LR.obj'),
+            'mesh_path_HR': os.path.join(self.OBJ, subject[0] + '_HR.obj'),
+            'mesh_path_LR': os.path.join(self.OBJ, subject[0] + '_LR.obj'),
             'sid': sid,
             'yid': yid,
             'pid': pid,
             'b_min': self.B_MIN,
             'b_max': self.B_MAX,
         }
-        render_data = self.get_render(subject, num_views=self.num_views, yid=yid, pid=pid,
+        #print(res)
+        render_data = self.get_render(subject[0], num_views=self.num_views, yid=yid, pid=pid,
                                         random_sample=self.opt.random_multiview)
         res.update(render_data) #add images and masks
 

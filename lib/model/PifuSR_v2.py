@@ -70,8 +70,8 @@ class PifuSR_v2(nn.Module):
         )
         self.tail1=nn.Sequential(
             nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
-            nn.LeakyReLU(0.2, True)
-            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.2, True),
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
             #nn.LeakyReLU(0.2, True)
 
         )
@@ -86,7 +86,7 @@ class PifuSR_v2(nn.Module):
         )
         self.tail2=nn.Sequential(
             nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
-            nn.LeakyReLU(0.2, True)
+            nn.LeakyReLU(0.2, True),
             nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
             #nn.LeakyReLU(0.2, True)
 
@@ -102,7 +102,7 @@ class PifuSR_v2(nn.Module):
         )
         self.tail3=nn.Sequential(
             nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
-            nn.LeakyReLU(0.2, True)
+            nn.LeakyReLU(0.2, True),
             nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
             #nn.LeakyReLU(0.2, True)
 
@@ -151,7 +151,7 @@ class PifuSR_v2(nn.Module):
             #checco se devo usare softmax
             )
 
-        self.upsample = nn.Upsample(scale_factor=max(opt.scale),
+        self.upsample = nn.Upsample(scale_factor=opt.scale,
                                     mode='bicubic', align_corners=False)
     
     def forward(self, x):

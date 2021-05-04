@@ -1,22 +1,95 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from ..net_util import *
+'''
+MIT License
 
+Copyright (c) 2019 Shunsuke Saito, Zeng Huang, and Ryota Natsume
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+'''
+import torch
+import torch.nn as nn 
+import torch.nn.functional as F 
+from ..net_util import conv3x3
+
+class ConvBlock(nn.Module):
+    def __init__(self, in_planes, out_planes, norm='batch'):
+        super(ConvBlock, self).__init__()
+        self.conv1 = conv3x3(in_planes, int(out_planes / 2))
+        self.conv2 = conv3x3(int(out_planes / 2), int(out_planes / 4))
+        self.conv3 = conv3x3(int(out_planes / 4), int(out_planes / 4))
+
+        if norm == 'batch':
+            self.bn1 = nn.BatchNorm2d(in_planes)
+            self.bn2 = nn.BatchNorm2d(int(out_planes / 2))
+            self.bn3 = nn.BatchNorm2d(int(out_planes / 4))
+            self.bn4 = nn.BatchNorm2d(in_planes)
+        elif norm == 'group':
+            self.bn1 = nn.GroupNorm(32, in_planes)
+            self.bn2 = nn.GroupNorm(32, int(out_planes / 2))
+            self.bn3 = nn.GroupNorm(32, int(out_planes / 4))
+            self.bn4 = nn.GroupNorm(32, in_planes)
+        
+        if in_planes != out_planes:
+            self.downsample = nn.Sequential(
+                self.bn4,
+                nn.ReLU(True),
+                nn.Conv2d(in_planes, out_planes,
+                          kernel_size=1, stride=1, bias=False),
+            )
+        else:
+            self.downsample = None
+    
+    def forward(self, x):
+        residual = x
+        #rint("convinput")
+        ###print(x.shape)
+        out1 = self.conv1(F.relu(self.bn1(x), True))
+        ###print("out1")
+        ###print(out1.shape)
+        out2 = self.conv2(F.relu(self.bn2(out1), True))
+        ###print("out2")
+        ###print(out2.shape)
+        out3 = self.conv3(F.relu(self.bn3(out2), True))
+        ###print("out3")
+        ##print(out3.shape)
+
+        out3 = torch.cat([out1, out2, out3], 1)
+        ##print("convout3")
+        ##print(out3.shape)
+
+        if self.downsample is not None:
+            residual = self.downsample(residual)
+        
+        out3 += residual
+        #print("eccolodc")
+        return out3
 
 class HourGlass(nn.Module):
-    def __init__(self, num_modules, depth, num_features, norm='batch'):
+    def __init__(self, depth, n_features, norm='batch'):
         super(HourGlass, self).__init__()
-        self.num_modules = num_modules
         self.depth = depth
-        self.features = num_features
+        self.features = n_features
         self.norm = norm
 
         self._generate_network(self.depth)
 
     def _generate_network(self, level):
         self.add_module('b1_' + str(level), ConvBlock(self.features, self.features, norm=self.norm))
-
         self.add_module('b2_' + str(level), ConvBlock(self.features, self.features, norm=self.norm))
 
         if level > 1:
@@ -27,152 +100,161 @@ class HourGlass(nn.Module):
         self.add_module('b3_' + str(level), ConvBlock(self.features, self.features, norm=self.norm))
 
     def _forward(self, level, inp):
-        # Upper branch
-        up1 = inp
-        #print("ok5")
-        #print(up1.shape)
+        # upper branch
+        ##print("level1")
+        ##print(inp.shape)
+        up1 = inp 
         up1 = self._modules['b1_' + str(level)](up1)
-        ##print("ok1")
-        ##print(self._modules['b1_' + str(level)])(up1)
-        #print("ok6")
-        #print(up1.shape)
-        # Lower branch
+        ##print('b1_' + str(level))
+        ##print(up1.shape)
+        # lower branch
         low1 = F.avg_pool2d(inp, 2, stride=2)
-        #print("ok7")
-        #print(low1.shape)
         low1 = self._modules['b2_' + str(level)](low1)
-        ##print("ok2")
-        ##print(self._modules['b2_' + str(level)])
-        #print("ok8")
-        #print(low1.shape)
+        ##print('b2_' + str(level))
+        ##print(low1.shape)
         if level > 1:
             low2 = self._forward(level - 1, low1)
-            #print("ok9")
-            #print(low2.shape)
+            ##print("level4")
+            ##print(low2.shape)
         else:
             low2 = low1
             low2 = self._modules['b2_plus_' + str(level)](low2)
-            #print("ok3")
-            ##print(self._modules['b2_plus_' + str(level)])
-            #print("ok10")
-            #print(low2.shape)
+            ##print("level3")
+            ##print('b2_plus_' + str(level))
 
         low3 = low2
         low3 = self._modules['b3_' + str(level)](low3)
-        ##print("ok4")
-        ##print(self._modules['b3_' + str(level)])
-        #print("ok11")
-        #print(low3.shape)
-        # NOTE: for newer PyTorch (1.3~), it seems that training results are degraded due to implementation diff in F.grid_sample
-        # if the pretrained model behaves weirdly, switch with the commented line.
-        # NOTE: I also found that "bicubic" works better.
+        #print("ciama")
+        ##print("level5")
+        ##print('b3_' + str(level))
         up2 = F.interpolate(low3, scale_factor=2, mode='bicubic', align_corners=True)
-        #print("ok12")
-        #print(up2.shape)
-       # up2 = F.interpolate(low3, scale_factor=2, mode='nearest)
-        ###print("ok3")
+        # up2 = F.interpolate(low3, scale_factor=2, mode='bilinear')
+       # #print("level6")
+        ##print(up2.shape)
         return up1 + up2
-
+    
     def forward(self, x):
         return self._forward(self.depth, x)
-
+        
 
 class HGFilter(nn.Module):
-    def __init__(self, opt):
+    def __init__(self, stack, depth, in_ch, last_ch, norm='batch', down_type='conv64', use_sigmoid=True):
         super(HGFilter, self).__init__()
-        self.num_modules = opt.num_stack
+        self.n_stack = stack
+        self.use_sigmoid = use_sigmoid
+        self.depth = depth
+        self.last_ch = last_ch
+        self.norm = norm
+        self.down_type = down_type
 
-        self.opt = opt
+        self.conv1 = nn.Conv2d(in_ch, 64, kernel_size=7, stride=2, padding=3)
 
-        # Base part
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3)#anche qua 
+        last_ch = self.last_ch
 
-        if self.opt.norm == 'batch':
+        if self.norm == 'batch':
             self.bn1 = nn.BatchNorm2d(64)
-        elif self.opt.norm == 'group':
+        elif self.norm == 'group':
             self.bn1 = nn.GroupNorm(32, 64)
 
-        if self.opt.hg_down == 'conv64':
-            self.conv2 = ConvBlock(64, 64, self.opt.norm)
+        if self.down_type == 'conv64':
+            #print("ok1")
+            self.conv2 = ConvBlock(64, 64, self.norm)
             self.down_conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
-        elif self.opt.hg_down == 'conv128':
-            self.conv2 = ConvBlock(64, 128, self.opt.norm) #anche qua
-            self.down_conv2 = nn.Conv2d(128, 128, kernel_size=3, stride=2, padding=1)
-        elif self.opt.hg_down == 'ave_pool':
-            self.conv2 = ConvBlock(64, 128, self.opt.norm)
-        else:
-            raise NameError('Unknown Fan Filter setting!')
+        elif self.down_type == 'low_res':
+            #print("ok2")
+            self.conv2 = ConvBlock(256, 256, self.norm)
 
-        self.conv3 = ConvBlock(128, 128, self.opt.norm) #128x128 128 feature
-
-        print(ConvBlock(128, 128, self.opt.norm))
-        self.conv4 = ConvBlock(128, 256, self.opt.norm) #128x128 256 feature
+        elif self.down_type == 'high_res':
+            #print("ok3")
+            self.conv2 = ConvBlock(64, 128, self.norm)
         
-        # Stacking part
-        for hg_module in range(self.num_modules):
-            self.add_module('m' + str(hg_module), HourGlass(1, opt.num_hourglass, 256, self.opt.norm))#cambia qua rispetto a pifuhd
+        self.conv3 = ConvBlock(128, 128, self.norm)
+        self.conv4 = ConvBlock(128, 256, self.norm)
+        
+        # start stacking
+        for stack in range(self.n_stack):
+            self.add_module('m' + str(stack), HourGlass(self.depth, 256, self.norm))
 
-            self.add_module('top_m_' + str(hg_module), ConvBlock(256, 256, self.opt.norm))
-            self.add_module('conv_last' + str(hg_module),
+            self.add_module('top_m_' + str(stack), ConvBlock(256, 256, self.norm))
+            self.add_module('conv_last' + str(stack),
                             nn.Conv2d(256, 256, kernel_size=1, stride=1, padding=0))
-            if self.opt.norm == 'batch':
-                self.add_module('bn_end' + str(hg_module), nn.BatchNorm2d(256))
-            elif self.opt.norm == 'group':
-                self.add_module('bn_end' + str(hg_module), nn.GroupNorm(32, 256))
-                
-            self.add_module('l' + str(hg_module), nn.Conv2d(256,
-                                                            opt.hourglass_dim, kernel_size=1, stride=1, padding=0))#anche qua
-            ##print("ok2")
-            if hg_module < self.num_modules - 1:
+            if self.norm == 'batch':
+                self.add_module('bn_end' + str(stack), nn.BatchNorm2d(256))
+            elif self.norm == 'group':
+                self.add_module('bn_end' + str(stack), nn.GroupNorm(32, 256))
+            
+            self.add_module('l' + str(stack),
+                            nn.Conv2d(256, last_ch, 
+                            kernel_size=1, stride=1, padding=0))
+            
+            if stack < self.n_stack - 1:
                 self.add_module(
-                    'bl' + str(hg_module), nn.Conv2d(256, 256, kernel_size=1, stride=1, padding=0))
-                self.add_module('al' + str(hg_module), nn.Conv2d(opt.hourglass_dim,
-                                                                 256, kernel_size=1, stride=1, padding=0)) #anche qua
+                    'bl' + str(stack), nn.Conv2d(256, 256, kernel_size=1, stride=1, padding=0))
+                self.add_module(
+                    'al' + str(stack), nn.Conv2d(last_ch, 256, kernel_size=1, stride=1, padding=0))
 
     def forward(self, x):
-        x = F.relu(self.bn1(self.conv1(x)), True)
-        print("ok1")
+        print("input")
         print(x.shape)
-        tmpx = x
-        if self.opt.hg_down == 'ave_pool':
-            x = F.avg_pool2d(self.conv2(x), 2, stride=2)
-        elif self.opt.hg_down in ['conv64', 'conv128']:
-            x = self.conv2(x)
-            x = self.down_conv2(x)
-        else:
-            raise NameError('Unknown Fan Filter setting!') #anche qua
+        #x1=self.conv1(x)
+        #print("conv1")
+        #print(x1.shape)
+        #x = F.relu(self.bn1(x1), True)
+        
+        ##print(x.shape)
 
-        normx = x
-        print("ok2")
-        print(x.shape)
-        x = self.conv3(x)
+        
         print("ok3")
-        print(x.shape)
-        x = self.conv4(x)
-        print("ok4")
-        print(x.shape)
+        x = self.conv2(x)
+        #else:
+        #raise NameError('unknown downsampling type')
+        ##print("fine")
+        ##print(x.shape)
+        normx = x
+        ###print("ok2")
+        ###print(x.shape)
+        if self.down_type=="high_res":
+            x = self.conv3(x)
+        ##print("conv3")
+        ##print(x.shape)
+            x = self.conv4(x)
+        ##print("conv4")
+        ##print(x.shape)
+
         previous = x
 
         outputs = []
-        for i in range(self.num_modules):
-            ##print("ok0")
-            hg = self._modules['m' + str(i)](previous)#usa hourglass qua
-            ##print("ok1")
-
+        #print(self.n_stack)
+        for i in range(self.n_stack):
+            ##print("hourglass")
+            hg = self._modules['m' + str(i)](previous) #this is hourglass
+            ##print(hg.shape)
             ll = hg
-            ll = self._modules['top_m_' + str(i)](ll)#qua non e' ourglass
-            ##print("ok2")
+            ll = self._modules['top_m_' + str(i)](ll)
+           
             ll = F.relu(self._modules['bn_end' + str(i)]
-                        (self._modules['conv_last' + str(i)](ll)), True)
-         
-            # Predict heatmaps
-            tmp_out = self._modules['l' + str(i)](ll)
+                       (self._modules['conv_last' + str(i)](ll)), True)
+            ###print(ll.shape)
+
+            #questo va cambiato, mi rimanda a 16 come feature!!!
+            tmp_out = self._modules['l' + str(i)](ll)  #controlla per high resolution one
+          
+            ###print("afterhg")
+            ###print(tmp_out.shape)
+            ###print("finale")
+            ###print(tmp_out.shape,normx.shape)
+            if self.use_sigmoid:
+                outputs.append(nn.Tanh()(tmp_out))
+            else:
+                outputs.append(tmp_out)
             
-            outputs.append(tmp_out)
-
-            if i < self.num_modules - 1:
+            if i < self.n_stack - 1:
+               # ##print("quando")
                 ll = self._modules['bl' + str(i)](ll)
+                ###print(ll.shape)
                 tmp_out_ = self._modules['al' + str(i)](tmp_out)
+                ###print(self._modules['bl' + str(i)])
                 previous = previous + ll + tmp_out_
-
-        return outputs, tmpx.detach(), normx
+        
+        return outputs, normx
+    
