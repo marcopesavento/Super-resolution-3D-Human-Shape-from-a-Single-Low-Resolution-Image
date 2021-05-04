@@ -95,11 +95,11 @@ def train(opt):
             image_tensor_hr = train_data['img_HR'].to(device=cuda)
             calib_tensor = train_data['calib'].to(device=cuda)
             sample_tensor = train_data['samples'].to(device=cuda)
-            print(image_tensor_lr.shape, image_tensor_hr.shape)
+            #print(image_tensor_lr.shape, image_tensor_hr.shape)
 
 
             image_tensor_hr,image_tensor_lr, calib_tensor = reshape_multiview_tensors(image_tensor_hr,image_tensor_lr, calib_tensor)
-            print(image_tensor_lr.shape, image_tensor_hr.shape)
+            #print(image_tensor_lr.shape, image_tensor_hr.shape)
 
             if opt.num_views > 1:
                 sample_tensor = reshape_sample_tensor(sample_tensor, opt.num_views)

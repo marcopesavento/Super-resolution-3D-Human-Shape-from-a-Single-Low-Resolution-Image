@@ -266,9 +266,11 @@ class HGPIFuNet(BasePIFuNet):
         #print(images.shape) modifico aggiungendo la sr network
         #self.images_hr=images_hr
         _,feature_lr,feature_hr=self.super_res(images_lr)
+        #print(feature_hr,feature_lr)
         
-        self.filter_hr(self.feature_hr)#512x512x (128/64)
-        self.filter_lr(self.feature_lr)#128x128x(512/256)
+        self.filter_lr(self.feature_lr)#128x128x(512/256)#error
+        self.filter_hr(self.feature_hr)#512x512x (128/64)#out of memory
+        
         # Phase 2: point query application primo mlp
         self.query_lr(points=points, calibs=calibs, transforms=transforms, labels_lr=labels_lr)
         self.query_hr(transforms=transforms, labels_hr=labels_hr)

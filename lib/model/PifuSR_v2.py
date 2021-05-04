@@ -155,78 +155,78 @@ class PifuSR_v2(nn.Module):
                                     mode='bicubic', align_corners=False)
     
     def forward(self, x):
-        print("input")
-        print(x.shape)
+        ##print("input")
+        ##print(x.shape)
         h = self.upsample(x)
         h=self.head(h) #512x512x32
-        print("upsample")
-        print(h.shape)
+        ##print("upsample")
+        ##print(h.shape)
         d1=self.down1(h)
         if self.residual:
             d1=self.body1(d1)
         d1_f=self.tail1(d1) #256x256x64 perche e a 32?
-        print("down1")
-        print(d1_f.shape)
+        ##print("down1")
+        ##print(d1_f.shape)
 
         d2=self.down2(d1_f)
         if self.residual:
             d2=self.body2(d2)
         d2_f=self.tail2(d2)#128x128x128
-        print("down2")
-        print(d2_f.shape)
+        ##print("down2")
+        ##print(d2_f.shape)
         d3=self.down3(d2_f) #64x64x128
         if self.residual:
-            print("ok")
+            ##print("ok")
             d3=self.body3(d3)
         d3_f=self.tail3(d3) 
-        print("down3")
-        print(d3_f.shape)
+        ##print("down3")
+        ##print(d3_f.shape)
         bo=self.bottleneck(d3_f) #non sono sicuro qua
-        print("bott")
-        print(bo.shape)
+        ##print("bott")
+        #print(bo.shape)
         new1=torch.cat((d3_f,bo),1) #concateno 64x64x128 con 64x64x128= 64x64x512
-        print("bott2")
-        print(new1.shape)
+        #print("bott2")
+        #print(new1.shape)
         up1_1=self.bott2(new1) #64x64x512
-        print("up1_1")
-        print(up1_1.shape)
+        #print("up1_1")
+        #print(up1_1.shape)
         up1=self.pixel_shuffle(up1_1) #128x128x128
-        print("up1")
-        print(up1.shape)
+        #print("up1")
+        #print(up1.shape)
         #vedo se passare up1 a 
         new2=torch.cat((d2_f,up1),1) #128x128x256
-        print("new2")
-        print(new2.shape)
+        #print("new2")
+        #print(new2.shape)
 
         up2_2=self.ups2(new2) #128x128x256
-        print("up2_2")
-        print(up2_2.shape)
+        #print("up2_2")
+        #print(up2_2.shape)
         up2=self.pixel_shuffle(up2_2) #256x256x64 sbaglio qualcosa dovrebbe essere 128
-        print("up2")
-        print(up2.shape)
+        #print("up2")
+        #print(up2.shape)
         new3=torch.cat((d1_f,up2),1) #256x256x128
-        print("new3")
-        print(new3.shape)
+        #print("new3")
+        #print(new3.shape)
         up3_2=self.ups3(new3)
-        print("up3_2")
-        print(up3_2.shape)
+        #print("up3_2")
+        #print(up3_2.shape)
         up3=self.pixel_shuffle(up3_2) #512x512x32
-        print("up3")
-        print(up3.shape)
+        #print("up3")
+        #print(up3.shape)
         fin=torch.cat((h,up3),1) #512x512x64 
-        print("fin")
-        print(fin.shape)
+        ##print("fin")
+        ##print(fin.shape)
         new_fin=self.ups4(fin) #layer_hr
-        print("new_fin")
-        print(new_fin.shape) 
+        ##print("new_fin")
+        ##print(new_fin.shape) 
 
         #volendo posso abbassare tutto di un channel, quindi partire da 32 al posto di 64 perche sono a 128x128x512
 
 
         img_SR=self.last(new_fin) #non son sicuro
-        print("img")
-        print(img_SR.shape)
+        ##print("img")
+        ##print(img_SR.shape)
 
         
-        return img_SR, new3, new_fin
+        return img_SR, new2, new_fin
     
