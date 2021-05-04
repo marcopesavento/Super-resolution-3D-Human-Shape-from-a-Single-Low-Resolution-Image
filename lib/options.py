@@ -41,7 +41,7 @@ class BaseOptions():
         g_train.add_argument('--freq_plot', type=int, default=10, help='freqency of the error plot')
         g_train.add_argument('--freq_save', type=int, default=50, help='freqency of the save_checkpoints')
         g_train.add_argument('--freq_save_ply', type=int, default=100, help='freqency of the save ply')
-        g_train.add_argument('--scale', type=int, default=2, help='image_resizing scale')
+        g_train.add_argument('--scale', type=int, default=2, help='image_resizing sca')
 
         g_train.add_argument('--no_gen_mesh', action='store_true')
         g_train.add_argument('--no_num_eval', action='store_true')
@@ -74,7 +74,8 @@ class BaseOptions():
         #g_model.add_argument('--hg_down', type=str, default='ave_pool', help='ave pool || conv64 || conv128')
         g_model.add_argument('--hg_dim', type=int, default=256, help='256 | 512')
         # hg filter specify
-        g_model.add_argument('--num_stack', type=int, default=4, help='# of hourglass')
+        g_model.add_argument('--num_stack_lr', type=int, default=3, help='# of hourglass')
+        g_model.add_argument('--num_stack_hr', type=int, default=1, help='# of hourglass')
         g_model.add_argument('--num_hourglass', type=int, default=2, help='# of stacked layer of hourglass')
         g_model.add_argument('--skip_hourglass', action='store_true', help='skip connection in hourglass')
         g_model.add_argument('--hg_down', type=str, default='ave_pool', help='ave pool || conv64 || conv128')
@@ -109,7 +110,7 @@ class BaseOptions():
         parser.add_argument('--residual', action='store_true', help='apply residual block in super resolution')
         parser.add_argument('--mlp1', type=float, default=0.01, help='weight for mlp1 error')
         parser.add_argument('--mlp2', type=float, default=1.0, help='weight for mlp2 error')
-        parser.add_argument('--srweight', type=float, default=0.01, help='weight for reconstruction error')
+        parser.add_argument('--srweight', type=float, default=0.001, help='weight for reconstruction error')
 
         # for eval
         parser.add_argument('--val_test_error', action='store_true', help='validate errors of test data')

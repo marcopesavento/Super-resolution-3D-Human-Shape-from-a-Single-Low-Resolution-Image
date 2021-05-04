@@ -57,26 +57,26 @@ class ConvBlock(nn.Module):
     def forward(self, x):
         residual = x
         #rint("convinput")
-        ###print(x.shape)
+        #####print(x.shape)
         out1 = self.conv1(F.relu(self.bn1(x), True))
-        ###print("out1")
-        ###print(out1.shape)
+        #####print("out1")
+        #####print(out1.shape)
         out2 = self.conv2(F.relu(self.bn2(out1), True))
-        ###print("out2")
-        ###print(out2.shape)
+        #####print("out2")
+        ####print(out2.shape)
         out3 = self.conv3(F.relu(self.bn3(out2), True))
-        ###print("out3")
-        ##print(out3.shape)
+        ####print("out3")
+        ###print(out3.shape)
 
         out3 = torch.cat([out1, out2, out3], 1)
-        ##print("convout3")
-        ##print(out3.shape)
+        ###print("convout3")
+        ###print(out3.shape)
 
         if self.downsample is not None:
             residual = self.downsample(residual)
         
         out3 += residual
-        #print("eccolodc")
+        ##print("eccolodc")
         return out3
 
 class HourGlass(nn.Module):
@@ -101,36 +101,36 @@ class HourGlass(nn.Module):
 
     def _forward(self, level, inp):
         # upper branch
-        print("level1")
-        print(inp.shape)
+        #print("level1")
+        #print(inp.shape)
         up1 = inp 
         up1 = self._modules['b1_' + str(level)](up1)
-        print('b1_' + str(level))
-        print(up1.shape)
+        #print('b1_' + str(level))
+        #print(up1.shape)
         # lower branch
         low1 = F.avg_pool2d(inp, 2, stride=2)
         low1 = self._modules['b2_' + str(level)](low1)
-        print('b2_' + str(level))
-        print(low1.shape)
+        #print('b2_' + str(level))
+        #print(low1.shape)
         if level > 1:
             low2 = self._forward(level - 1, low1)
-            print("level4")
-            print(low2.shape)
+            #print("level4")
+            #print(low2.shape)
         else:
             low2 = low1
             low2 = self._modules['b2_plus_' + str(level)](low2)
-            print("level3")
-            print('b2_plus_' + str(level))
+            #print("level3")
+            #print('b2_plus_' + str(level))
 
         low3 = low2
         low3 = self._modules['b3_' + str(level)](low3)
-        #print("ciama")
-        print("level5")
-        print('b3_' + str(level))
+        ##print("ciama")
+        #print("level5")
+        #print('b3_' + str(level))
         up2 = F.interpolate(low3, scale_factor=2, mode='bicubic', align_corners=True)
         #up2 = F.interpolate(low3, scale_factor=2, mode='bilinear')
-        print("level6")
-        print(up2.shape)
+        #print("level6")
+        #print(up2.shape)
         return up1 + up2
     
     def forward(self, x):
@@ -157,15 +157,15 @@ class HGFilter(nn.Module):
             self.bn1 = nn.GroupNorm(32, 64)
 
         if self.down_type == 'conv64':
-            #print("ok1")
+            ##print("ok1")
             self.conv2 = ConvBlock(64, 64, self.norm)
             self.down_conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
         elif self.down_type == 'low_res':
-            #print("ok2")
+            ##print("ok2")
             self.conv2 = ConvBlock(256, 256, self.norm)
 
         elif self.down_type == 'high_res':
-            #print("ok3")
+            ##print("ok3")
             self.conv2 = ConvBlock(64, 128, self.norm)
         
         self.conv3 = ConvBlock(128, 128, self.norm)
@@ -194,67 +194,70 @@ class HGFilter(nn.Module):
                     'al' + str(stack), nn.Conv2d(last_ch, 256, kernel_size=1, stride=1, padding=0))
 
     def forward(self, x):
-        print("input")
-        print(x.shape)
+        #print("input")
+        #print(x.shape)
         #x1=self.conv1(x)
-        #print("conv1")
-        #print(x1.shape)
+        ##print("conv1")
+        ##print(x1.shape)
         #x = F.relu(self.bn1(x1), True)
         
-        ##print(x.shape)
+        ###print(x.shape)
 
         tmpx=x
       
         x = self.conv2(x)
         #else:
         #raise NameError('unknown downsampling type')
-        print("fine")
-        print(x.shape)
+        #print("fine")
+        #print(x.shape)
         normx = x
-        ###print("ok2")
-        ###print(x.shape)
+        ####print("ok2")
+        ####print(x.shape)
         if self.down_type=="high_res":
             x = self.conv3(x)
-            print("conv3")
-            print(x.shape)
+            #print("conv3")
+            #print(x.shape)
             x = self.conv4(x)
-            print("conv4")
-            print(x.shape)
+            #print("conv4")
+            #print(x.shape)
 
         previous = x
 
         outputs = []
-        #print(self.n_stack)
+        ##print(self.n_stack)
         for i in range(self.n_stack):
-            ##print("hourglass")
+            #print(self.n_stack)
+            ###print("hourglass")
             hg = self._modules['m' + str(i)](previous) #this is hourglass
-            print(hg.shape)
+            #print(hg.shape)
             ll = hg
             ll = self._modules['top_m_' + str(i)](ll)
            
             ll = F.relu(self._modules['bn_end' + str(i)]
                        (self._modules['conv_last' + str(i)](ll)), True)
-            print(ll.shape)
+            #print(ll.shape)
 
             #questo va cambiato, mi rimanda a 16 come feature!!!
             tmp_out = self._modules['l' + str(i)](ll)  #controlla per high resolution one
           
-            print("afterhg")
-            print(tmp_out.shape)
-            print("finale")
-            print(tmp_out.shape,normx.shape)
+            #print("afterhg")
+            #print(tmp_out.shape)
+            #print("finale")
+            #print(tmp_out.shape,normx.shape)
             if self.use_sigmoid:
                 outputs.append(nn.Tanh()(tmp_out))
             else:
                 outputs.append(tmp_out)
             
             if i < self.n_stack - 1:
-                print("quando")
+                #print("quando")
                 ll = self._modules['bl' + str(i)](ll)
-                print(ll.shape)
+                #print(ll.shape)
                 tmp_out_ = self._modules['al' + str(i)](tmp_out)
-                print(self._modules['bl' + str(i)])
+                #print(self._modules['bl' + str(i)])
                 previous = previous + ll + tmp_out_
+            #print("fatto")
+            #print(outputs[0].shape)
         
         return outputs, tmpx.detach(), normx
     

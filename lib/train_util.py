@@ -6,6 +6,7 @@ from .geometry import *
 import cv2
 from PIL import Image
 from tqdm import tqdm
+from torchvision.utils import save_image
 
 def reshape_multiview_tensors(image_tensor_hr,image_tensor_lr, calib_tensor):
     # Careful here! Because we put single view and multiview together,
@@ -52,7 +53,8 @@ def gen_mesh(opt, net, cuda, data, save_path, use_octree=True):
         #image_tensor = data['img'].to(device=cuda)
     image_tensor_hr=data['img_HR'].to(device=cuda)
     calib_tensor = data['calib'].to(device=cuda)
-    _,feature_lr, feature_hr=net.super_res(image_tensor)
+    img_SR,feature_lr, feature_hr=net.super_res(image_tensor)
+    #print(feature_hr.shape, feature_lr.shape)
     net.filter_hr(feature_hr) #qua non son sicuro
     net.filter_lr(feature_lr) #qua non sson sicuro
 
@@ -60,12 +62,16 @@ def gen_mesh(opt, net, cuda, data, save_path, use_octree=True):
     b_max = data['b_max']
     try:
         save_img_path = save_path[:-4] + '.png'
+        save_img_path_SR=save_path[:-4] + '_SR.png'
         save_img_list = []
         for v in range(image_tensor.shape[0]):
             save_img = (np.transpose(image_tensor[v].detach().cpu().numpy(), (1, 2, 0)) * 0.5 + 0.5)[:, :, ::-1] * 255.0
             save_img_list.append(save_img)
         save_img = np.concatenate(save_img_list, axis=1)
         Image.fromarray(np.uint8(save_img[:,:,::-1])).save(save_img_path)
+        save_image(img_SR.clamp(0, 1), save_img_path_SR)
+
+
         verts, faces, _, _ = reconstruction(
             net, cuda, calib_tensor, opt.resolution, b_min, b_max, use_octree=use_octree)
         verts_tensor = torch.from_numpy(verts.T).unsqueeze(0).to(device=cuda).float()
@@ -172,8 +178,8 @@ def calc_error(opt, net, cuda, dataset, num_tests):
             sample_tensor = data['samples'].to(device=cuda).unsqueeze(0)
             if opt.num_views > 1:
                 sample_tensor = reshape_sample_tensor(sample_tensor, opt.num_views)
-            label_tensor_hr = data['labels_hr'].to(device=cuda).unsqueeze(0)
-            label_tensor_lr = data['labels_lr'].to(device=cuda).unsqueeze(0)
+            label_tensor_hr = data['labels_HR'].to(device=cuda).unsqueeze(0)
+            label_tensor_lr = data['labels_LR'].to(device=cuda).unsqueeze(0)
             res, error, error_mlp1, error_mlp2, error_SR = net.forward(image_tensor_lr,image_tensor_hr, sample_tensor, calib_tensor, labels_lr=label_tensor_lr,labels_hr=label_tensor_hr)
 
             IOU, prec, recall = compute_acc(res, label_tensor_hr)

@@ -34,13 +34,15 @@ class HGPIFuNet(BasePIFuNet):
             error_term=error_term)
 
         self.name = 'hgpifu'
+        self.device=torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.criterion_rec = nn.L1Loss().to(self.device)
 
         self.opt = opt
         self.num_views = self.opt.num_views
 
-        self.image_filter_lr = HGFilter(3, opt.hg_depth, 256, opt.hg_dim, 
+        self.image_filter_lr = HGFilter(opt.num_stack_lr, opt.hg_depth, 256, opt.hg_dim, 
                                      opt.norm, 'low_res', False)
-        self.image_filter_hr = HGFilter(3, opt.hg_depth, 64, opt.hg_dim, 
+        self.image_filter_hr = HGFilter(opt.num_stack_hr, opt.hg_depth, 64, opt.hg_dim, 
                                      opt.norm, 'high_res', False)
         self.super_resolution=PifuSR_v2(opt)
 
@@ -127,6 +129,8 @@ class HGPIFuNet(BasePIFuNet):
         :return: [B, Res, N] predictions for each point
         '''
         if labels_lr is not None:
+            #print("ok")
+            print(labels_lr.shape)
             self.labels_lr = labels_lr
         ##print(calibs) #calibs e' ok ma da dove vengono fuori i punti?????
         xyz = self.projection(points, calibs, transforms)
@@ -134,25 +138,26 @@ class HGPIFuNet(BasePIFuNet):
         xy = xyz[:, :2, :]
         #print(xy)
         z = xyz[:, 2:3, :]
-        ##print(xyz.shape)
+        print(xyz.shape)
 
         self.in_img = (xy[:, 0] >= -1.0) & (xy[:, 0] <= 1.0) & (xy[:, 1] >= -1.0) & (xy[:, 1] <= 1.0)
-        #print(in_img.shape)
+        print(self.in_img.shape)
         self.z_feat = self.normalizer(z, calibs=calibs)
-        #print(z_feat.shape)
+        print(self.z_feat.shape)
         if self.opt.skip_hourglass:
-            #print("ok")
+            #rint("ok")
             tmpx_local_feature_lr = self.index(self.tmpx_lr, xy)
             tmpx_local_feature_hr = self.index(self.tmpx_hr, xy)
             self.tmpx_local_feature=torch.cat((tmpx_local_feature_lr,tmpx_local_feature_hr),1)
 
 
         self.intermediate_preds_list_lr = []
+        #print(len(self.im_feat_list_hr))
         #print(len(self.im_feat_list))#e' qua che devo cambiare perche voglio prenderlo da ambedue e concatenarli
-        for im_feat in range(0,len(self.im_feat_list_lr)):
+        for im_feat in range(0,len(self.im_feat_list_lr)): #no perche per l'hr ne ho solo uno
             # [B, Feat_i + z, N]
 
-            point_local_feat_list = [self.index(self.im_feat_list_lr[im_feat], xy),self.index(self.im_feat_list_hr[im_feat],xy)]#take points in the image
+            point_local_feat_list = [self.index(self.im_feat_list_lr[im_feat], xy),self.index(self.im_feat_list_hr[0],xy)]#take points in the image
             #point_local_feat_list_hr = [, xy), z_feat]#take points in the image
 
             if self.opt.skip_hourglass:
@@ -168,7 +173,7 @@ class HGPIFuNet(BasePIFuNet):
             #print(pred)
             self.intermediate_preds_list_lr.append(pred)
 
-        self.preds_lr = self.intermediate_preds_list_lr[-1]
+        self.preds_lr = self.intermediate_preds_list_lr[-1] #qua da capire perche la faccio solo all'ultimo e non a tutti, potrei fare la hr con tutti e non solo con l'ultimo alla fine
 
     def query_hr(self, transforms=None, labels_hr=None):
         '''
@@ -254,7 +259,8 @@ class HGPIFuNet(BasePIFuNet):
 
         self.images_HR=images_hr
        
-        error=self.error_term(self.im_SR,self.images_HR)
+        #error=self.error_term(self.im_SR,self.images_HR)
+        error=self.criterion_rec(self.im_SR,self.images_HR)
         #for preds in self.intermediate_preds_list:
          #   error += self.error_term(preds, self.labels)
         #error /= len(self.intermediate_preds_list)
