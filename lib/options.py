@@ -42,6 +42,7 @@ class BaseOptions():
         g_train.add_argument('--freq_save', type=int, default=50, help='freqency of the save_checkpoints')
         g_train.add_argument('--freq_save_ply', type=int, default=100, help='freqency of the save ply')
         g_train.add_argument('--scale', type=int, default=2, help='image_resizing sca')
+        g_train.add_argument('--rgb_range', type=int, default=255, help='rgb range')
 
         g_train.add_argument('--no_gen_mesh', action='store_true')
         g_train.add_argument('--no_num_eval', action='store_true')
@@ -110,7 +111,7 @@ class BaseOptions():
         parser.add_argument('--residual', action='store_true', help='apply residual block in super resolution')
         parser.add_argument('--mlp1', type=float, default=0.01, help='weight for mlp1 error')
         parser.add_argument('--mlp2', type=float, default=1.0, help='weight for mlp2 error')
-        parser.add_argument('--srweight', type=float, default=0.001, help='weight for reconstruction error')
+        parser.add_argument('--srweight', type=float, default=1.0, help='weight for reconstruction error')
 
         # for eval
         parser.add_argument('--val_test_error', action='store_true', help='validate errors of test data')

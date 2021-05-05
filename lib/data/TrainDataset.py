@@ -86,7 +86,7 @@ class TrainDataset(Dataset):
         self.to_tensor = transforms.Compose([
             #transforms.Resize(self.load_size), qua modificato ma potrebbe essere sbagliato
             transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            #stransforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)) #se normalizzo devo unnormalizzare dopo
         ])
 
         # augmentation
@@ -245,13 +245,13 @@ class TrainDataset(Dataset):
             calib = torch.Tensor(np.matmul(intrinsic, extrinsic)).float()
             extrinsic = torch.Tensor(extrinsic).float()
 
-            mask_LR = mask_HR.resize((x - (x % 2) for x in mask_HR.size), Image.BICUBIC)
+            #mask_LR = mask_HR.resize((x - (x % 2) for x in mask_HR.size), Image.BICUBIC)
 
-            render_LR = render_HR.resize((x - (x % 2) for x in render_HR.size))
+            #render_LR = render_HR.resize((x - (x % 2) for x in render_HR.size))
 
-            mask_LR = mask_HR.resize((x //2 for x in mask_LR.size), Image.NEAREST)
+            mask_LR = mask_HR.resize((x //2 for x in mask_HR.size), Image.NEAREST)
 
-            render_LR = render_HR.resize((x //2 for x in render_LR.size), Image.BICUBIC)
+            render_LR = render_HR.resize((x //2 for x in render_HR.size), Image.BICUBIC)
 
             mask_LR = transforms.ToTensor()(mask_LR).float()
            
@@ -295,7 +295,8 @@ class TrainDataset(Dataset):
             torch.manual_seed(1991)
         name_HR=subject[0]+'_HR.obj'
         name_LR=subject[0]+'_LR.obj'
-        ##print(self.mesh_dic)
+        #print("name_mesh",name_LR)
+        #print(self.mesh_dic)
         mesh_HR = self.mesh_dic[name_HR]
         mesh_LR= self.mesh_dic[name_LR]
         ##print(name_HR,name_LR)

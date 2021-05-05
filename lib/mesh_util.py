@@ -35,24 +35,29 @@ def reconstruction(net, cuda, calib_tensor,
         
         net.query_lr(samples, calib_tensor)
         net.query_hr()
-        pred = net.get_preds()[0][0]
+        pred_hr, pred_lr = net.get_preds() #qua non so cosa faccia???
         torch.set_printoptions(threshold=10000)
         
-        return pred.detach().cpu().numpy()
+        return pred_hr.detach().cpu().numpy(), pred_lr.detach().cpu().numpy()
 
     # Then we evaluate the grid
     if use_octree:
-        sdf = eval_grid_octree(coords, eval_func, num_samples=num_samples)
+        sdf_hr,sdf_lr = eval_grid_octree(coords, eval_func, num_samples=num_samples)
     else:
-        sdf = eval_grid(coords, eval_func, num_samples=num_samples)
+        sdf_hr,sdf_lr = eval_grid(coords, eval_func, num_samples=num_samples)
 
     # Finally we do marching cubes
     try:
-        verts, faces, normals, values = measure.marching_cubes_lewiner(sdf, 0.5)
+        verts_hr, faces_hr, normals_hr, values_hr = measure.marching_cubes_lewiner(sdf_hr, 0.5)
         # transform verts into world coordinate system
-        verts = np.matmul(mat[:3, :3], verts.T) + mat[:3, 3:4]
-        verts = verts.T
-        return verts, faces, normals, values
+        verts_hr = np.matmul(mat[:3, :3], verts_hr.T) + mat[:3, 3:4]
+        verts_hr = verts_hr.T
+
+        verts_lr, faces_lr, normals_lr, values_lr = measure.marching_cubes_lewiner(sdf_lr, 0.5)
+        # transform verts into world coordinate system
+        verts_lr = np.matmul(mat[:3, :3], verts_lr.T) + mat[:3, 3:4]
+        verts_lr = verts_lr.T
+        return verts_hr, faces_hr, normals_hr, values_hr,verts_lr, faces_lr, normals_lr, values_lr
     except:
         print('error cannot marching cubes')
         return -1

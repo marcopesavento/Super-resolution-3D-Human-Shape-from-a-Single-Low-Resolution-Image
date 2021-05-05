@@ -18,8 +18,9 @@ class BasePIFuNet(nn.Module):
         """
         super(BasePIFuNet, self).__init__()
         self.name = 'base'
-
+        self.device=torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.error_term = error_term
+        self.criterion_rec = nn.L1Loss().to(self.device)
 
         self.index = index
         self.projection = orthogonal if projection_mode == 'orthogonal' else perspective
@@ -81,7 +82,7 @@ class BasePIFuNet(nn.Module):
         Get the predictions from the last query
         :return: [B, Res, N] network prediction for the last query
         '''
-        return self.preds_hr
+        return self.preds_hr, self.preds_lr
 
     def get_error_hr(self):
         '''
@@ -96,4 +97,21 @@ class BasePIFuNet(nn.Module):
         :return: loss term
         '''
         return self.error_term(self.preds_lr, self.labels_lr)
+
+    def get_errorSR(self,image_SR,images_hr):
+        '''
+        Hourglass has its own intermediate supervision scheme
+        '''
+
+        self.images_HR=images_hr
+       
+        #error=self.error_term(self.im_SR,self.images_HR)
+        #print("img_SR",self.im_SR)
+        #print("img_HR",images_hr)
+        error=self.criterion_rec(image_SR,images_hr)
+        #for preds in self.intermediate_preds_list:
+         #   error += self.error_term(preds, self.labels)
+        #error /= len(self.intermediate_preds_list)
+        
+        return error
 

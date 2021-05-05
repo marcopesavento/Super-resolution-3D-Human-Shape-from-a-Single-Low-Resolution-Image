@@ -25,27 +25,7 @@ import torch
 import torch.nn as nn 
 import torch.nn.functional as F 
 from ..net_util import *
-
-class ResBlock(nn.Module):
-    """
-    Basic residual block for AMRSR.
-
-    Parameters
-    ---
-    n_filters : int, optional
-        a number of filters.
-    """
-
-    def __init__(self, n_filters=64):
-        super(ResBlock, self).__init__()
-        self.body = nn.Sequential(
-            nn.Conv2d(n_filters, n_filters, 3, 1, 1),
-            nn.ReLU(True),
-            nn.Conv2d(n_filters, n_filters, 3, 1, 1),
-        )
-
-    def forward(self, x):
-        return self.body(x) + x
+from .common import *
 
 class PifuSR_v2(nn.Module):
     def __init__(self, opt,n_blocks=2):
@@ -66,13 +46,13 @@ class PifuSR_v2(nn.Module):
 
         )
         self.body1 = nn.Sequential(
-            *[ResBlock(32) for _ in range(n_blocks)],
+            *[ResBlock(32) for _ in range(n_blocks)]
         )
         self.tail1=nn.Sequential(
             nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(0.2, True),
-            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
-            #nn.LeakyReLU(0.2, True)
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.2, True)
 
         )
 
@@ -82,13 +62,13 @@ class PifuSR_v2(nn.Module):
 
         )
         self.body2 = nn.Sequential(
-            *[ResBlock(64) for _ in range(n_blocks)],
+            *[ResBlock(64) for _ in range(n_blocks)]
         )
         self.tail2=nn.Sequential(
             nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(0.2, True),
             nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
-            #nn.LeakyReLU(0.2, True)
+            nn.LeakyReLU(0.2, True)
 
         )
 
@@ -104,7 +84,7 @@ class PifuSR_v2(nn.Module):
             nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(0.2, True),
             nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
-            #nn.LeakyReLU(0.2, True)
+            nn.LeakyReLU(0.2, True)
 
 
             
@@ -158,29 +138,38 @@ class PifuSR_v2(nn.Module):
         ##print("input")
         ##print(x.shape)
         h = self.upsample(x)
-        h=self.head(h) #512x512x32
+        
+        h=self.head(h) #512x512x32  
+        #print(h)
+        
+        
+
         ##print("upsample")
         ##print(h.shape)
         d1=self.down1(h)
+       
         if self.residual:
             d1=self.body1(d1)
         d1_f=self.tail1(d1) #256x256x64 perche e a 32?
         ##print("down1")
-        ##print(d1_f.shape)
+        #print(d1_f)
 
         d2=self.down2(d1_f)
         if self.residual:
             d2=self.body2(d2)
         d2_f=self.tail2(d2)#128x128x128
         ##print("down2")
-        ##print(d2_f.shape)
+        #print(d2_f) #fin qui abbastanza ragionevoli
         d3=self.down3(d2_f) #64x64x128
+        #print(d3)
+        #da qua mi parte
         if self.residual:
             ##print("ok")
             d3=self.body3(d3)
+            #print(d3)
         d3_f=self.tail3(d3) 
         ##print("down3")
-        ##print(d3_f.shape)
+        #print(d3_f)
         bo=self.bottleneck(d3_f) #non sono sicuro qua
         ##print("bott")
         #print(bo.shape)
@@ -226,7 +215,7 @@ class PifuSR_v2(nn.Module):
         img_SR=self.last(new_fin) #non son sicuro
         ##print("img")
         ##print(img_SR.shape)
-
+        #print(img_SR)
         
         return img_SR, new2, new_fin
     

@@ -107,7 +107,7 @@ def train(opt):
             label_tensor_hr = train_data['labels_HR'].to(device=cuda)
             label_tensor_lr = train_data['labels_LR'].to(device=cuda)
             #arrivato qua a modificare
-            res, error, error_mlp1, error_mlp2, error_SR = netG.forward(image_tensor_lr,image_tensor_hr, sample_tensor, calib_tensor, labels_lr=label_tensor_lr,labels_hr=label_tensor_hr)
+            res_hr, error, error_mlp1, error_mlp2, error_SR,res_lr = netG.forward(image_tensor_lr,image_tensor_hr, sample_tensor, calib_tensor, labels_lr=label_tensor_lr,labels_hr=label_tensor_hr)
 
             optimizerG.zero_grad()
             error.backward()
@@ -131,7 +131,7 @@ def train(opt):
 
             if train_idx % opt.freq_save_ply == 0:
                 save_path = '%s/%s/pred.ply' % (opt.results_path, opt.name)
-                r = res[0].cpu()
+                r = res_hr[0].cpu()
                 points = sample_tensor[0].transpose(0, 1).cpu()
                 save_samples_truncted_prob(save_path, points.detach().numpy(), r.detach().numpy())
 
