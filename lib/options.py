@@ -106,13 +106,35 @@ class BaseOptions():
         parser.add_argument('--no_residual', action='store_true', help='no skip connection in mlp')
         parser.add_argument('--schedule', type=int, nargs='+', default=[60, 80],
                             help='Decrease learning rate at these epochs.')
+        parser.add_argument('--n_block', type=int, nargs='+', default=[2,2,2],
+                            help='number of residual block.')
         parser.add_argument('--gamma', type=float, default=0.1, help='LR is multiplied by gamma on schedule.')
         parser.add_argument('--color_loss_type', type=str, default='l1', help='mse | l1')
+        parser.add_argument('--losses', type=str, default='l1', help='mse | l1')
         parser.add_argument('--residual', action='store_true', help='apply residual block in super resolution')
         parser.add_argument('--mlp1', type=float, default=0.01, help='weight for mlp1 error')
         parser.add_argument('--mlp2', type=float, default=1.0, help='weight for mlp2 error')
         parser.add_argument('--srweight', type=float, default=1.0, help='weight for reconstruction error')
-
+        parser.add_argument('--n_train', type=int,  default=300,
+                            help='numbe of trainingdatat.')
+        parser.add_argument('--n_val', type=int,  default=60,
+                            help='number of validation data.')
+        
+        parser.add_argument('--optimizer', default='ADAM',
+                            choices=('SGD', 'ADAM', 'RMSprop', 'AMSgrad'),
+                            help='optimizer to use (SGD | ADAM | RMSprop)')
+        parser.add_argument('--momentum', type=float, default=0.9,
+                            help='SGD momentum')
+        parser.add_argument('--beta1', type=float, default=0.9,
+                            help='ADAM beta1')
+        parser.add_argument('--beta2', type=float, default=0.999,
+                            help='ADAM beta2')
+        parser.add_argument('--epsilon', type=float, default=1e-8,
+                            help='ADAM epsilon for numerical stability')
+        parser.add_argument('--ams', type=float, default=False,
+                            help='True if AMSgrad')
+        parser.add_argument('--weight_decay', type=float, default=0,
+                            help='weight decay')
         # for eval
         parser.add_argument('--val_test_error', action='store_true', help='validate errors of test data')
         parser.add_argument('--val_train_error', action='store_true', help='validate errors of train data')
@@ -121,7 +143,8 @@ class BaseOptions():
         parser.add_argument('--all_mesh', action='store_true', help='generate meshs from all hourglass output')
         parser.add_argument('--num_gen_mesh_test', type=int, default=1,
                             help='how many meshes to generate during testing')
-
+        parser.add_argument('--n_colors', type=int, default=3,
+                    help='number of color channels to use')
         # path
         parser.add_argument('--checkpoints_path', type=str, default='./checkpoints', help='path to save checkpoints')
         parser.add_argument('--load_netG_checkpoint_path', type=str, default=None, help='path to save checkpoints')

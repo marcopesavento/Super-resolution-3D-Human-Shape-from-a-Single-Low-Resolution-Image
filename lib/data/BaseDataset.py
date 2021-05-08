@@ -32,7 +32,9 @@ class BaseDataset(Dataset):
                 'samples': None,  # [3, N] samples
                 'labels': None,  # [1, N] labels
 
-                'img': None,  # [num_views, C, H, W] input images
+                'img_HR': None,  # [num_views, C, H, W] input images
+                'img_LR': None,  # [num_views, C, H, W] input images
+
                 'calib': None,  # [num_views, 4, 4] calibration matrix
                 'extrinsic': None,  # [num_views, 4, 4] extrinsic matrix
                 'mask': None,  # [num_views, 1, H, W] segmentation masks

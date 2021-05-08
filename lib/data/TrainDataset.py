@@ -125,6 +125,7 @@ class TrainDataset(Dataset):
             'mask': [num_views, 1, W, H] masks
         '''
         pitch = self.pitch_list[pid]
+        #print(pitch)
 
         # The ids are an even distribution of num_views around view_id
         view_ids = [self.yaw_list[(yid + len(self.yaw_list) // num_views * offset) % len(self.yaw_list)]
@@ -138,11 +139,12 @@ class TrainDataset(Dataset):
         render_list_HR = []
         mask_list_HR = []
         extrinsic_list = []
-
+        print(view_ids)
         for vid in view_ids:
+            
             param_path = os.path.join(self.PARAM, subject, '%d_%d_%02d.npy' % (vid, pitch, 0))
             render_path = os.path.join(self.RENDER, subject, '%d_%d_%02d.jpg' % (vid, pitch, 0))
-            ##print(render_path)
+            #print(render_path)
             mask_path = os.path.join(self.MASK, subject, '%d_%d_%02d.png' % (vid, pitch, 0))
 
             # loading calibration data
@@ -192,9 +194,10 @@ class TrainDataset(Dataset):
             if self.is_train:
                 # Pad images
                 pad_size = int(0.1 * self.load_size)
+              
                 render_HR = ImageOps.expand(render_HR, pad_size, fill=0)
                 mask_HR = ImageOps.expand(mask_HR, pad_size, fill=0)
-
+                print(render_HR.size)
                 w, h = render_HR.size
                 th, tw = self.load_size, self.load_size
 
@@ -229,12 +232,12 @@ class TrainDataset(Dataset):
 
                 x1 = int(round((w - tw) / 2.)) + dx
                 y1 = int(round((h - th) / 2.)) + dy
-
+                print(x1,y1)
                 render_HR = render_HR.crop((x1, y1, x1 + tw, y1 + th))
                 mask_HR = mask_HR.crop((x1, y1, x1 + tw, y1 + th))
 
                 render_HR = self.aug_trans(render_HR)
-
+                print(render_HR.size)
                 # random blur
                 if self.opt.aug_blur > 0.00001:
                     blur = GaussianBlur(np.random.uniform(0, self.opt.aug_blur))
@@ -256,7 +259,7 @@ class TrainDataset(Dataset):
             mask_LR = transforms.ToTensor()(mask_LR).float()
            
 
-            render_LR = self.to_tensor(render_LR)
+            render_LR = self.to_tensor(render_LR).float()
          
             render_LR = mask_LR.expand_as(render_LR) * render_LR
 
@@ -266,7 +269,7 @@ class TrainDataset(Dataset):
 
             mask_HR = transforms.ToTensor()(mask_HR).float()
             
-            render_HR = self.to_tensor(render_HR)
+            render_HR = self.to_tensor(render_HR).float()
             render_HR = mask_HR.expand_as(render_HR) * render_HR
             #mask_LR = transforms.Resize(self.load_size)(mask_LR)
             
@@ -416,7 +419,7 @@ class TrainDataset(Dataset):
 
         # name of the subject 'rp_xxxx_xxx'
         subject = os.path.splitext(self.subjects[sid])
-        ###print(subject)
+        print(subject)
         res = {
             'name': subject,
             'mesh_path_HR': os.path.join(self.OBJ, subject[0] + '_HR.obj'),
@@ -436,6 +439,7 @@ class TrainDataset(Dataset):
         #qua devo mettere low resolution e high resolution! occhio che low resolution mi interessa solo groundtruth
         #mi conviene associare l'object mesh direttamente as input data quindi a subject!
         if self.opt.num_sample_inout:
+            print("madonna troia")
            
             sample_data = self.select_sampling_method(subject)
             res.update(sample_data)

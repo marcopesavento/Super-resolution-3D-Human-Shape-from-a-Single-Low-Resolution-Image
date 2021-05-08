@@ -28,8 +28,9 @@ def train(opt):
     # set cuda
     cuda = torch.device('cuda:%d' % opt.gpu_id)
 
-    train_dataset = TrainDataset(opt, phase='train')
-    test_dataset = TrainDataset(opt, phase='test')
+    train_dataset = TrainDataset_v4(opt, phase='train')
+    test_dataset = TrainDataset_v4(opt, phase='test')
+    
 
     projection_mode = train_dataset.projection_mode
 
@@ -48,7 +49,25 @@ def train(opt):
 
     # create net
     netG = HGPIFuNet(opt, projection_mode).to(device=cuda)
-    optimizerG = torch.optim.RMSprop(netG.parameters(), lr=opt.learning_rate, momentum=0, weight_decay=0)
+    if opt.optimizer == 'SGD':
+        optimizerG = torch.optim.SGD(netG.parameters(), lr=opt.learning_rate, momentum=opt.momentum, weight_decay=opt.weight_decay)
+        #kwargs = {'momentum': args.momentum}
+    elif opt.optimizer == 'ADAM':
+        optimizerG = torch.optim.Adam(netG.parameters(), lr=opt.learning_rate, betas=(opt.beta1, opt.beta2),eps=opt.epsilon, weight_decay=opt.weight_decay)
+        #kwargs = {
+        ##    'betas': (args.beta1, args.beta2),
+        #    'eps': args.epsilon
+        #}
+    elif opt.optimizer == 'RMSprop':
+        optimizerG = torch.optim.RMSprop(netG.parameters(), lr=opt.learning_rate, momentum=0, weight_decay=opt.weight_decay)
+        #kwargs = {'eps': args.epsilon}
+    elif opt.optimizer == 'AMSgrad':
+        optimizerG = torch.optim.Adam(netG.parameters(), lr=opt.learning_rate, betas=(opt.beta1, opt.beta2),eps=opt.epsilon, weight_decay=opt.weight_decay,amsgrad=True)
+        #kwargs = {
+        #    'betas': (args.beta1, args.beta2),
+        #    'eps': args.epsilon
+            #'amsgrad'=args.ams
+        #}
     lr = opt.learning_rate
     print('Using Network: ', netG.name)
     
@@ -87,6 +106,7 @@ def train(opt):
 
         set_train()
         iter_data_time = time.time()
+
         for train_idx, train_data in enumerate(train_data_loader):
             iter_start_time = time.time()
 
@@ -97,9 +117,9 @@ def train(opt):
             sample_tensor = train_data['samples'].to(device=cuda)
             #print(image_tensor_lr.shape, image_tensor_hr.shape)
 
-
+            print(image_tensor_lr.shape, image_tensor_hr.shape)
             image_tensor_hr,image_tensor_lr, calib_tensor = reshape_multiview_tensors(image_tensor_hr,image_tensor_lr, calib_tensor)
-            #print(image_tensor_lr.shape, image_tensor_hr.shape)
+            print(image_tensor_lr.shape, image_tensor_hr.shape)
 
             if opt.num_views > 1:
                 sample_tensor = reshape_sample_tensor(sample_tensor, opt.num_views)

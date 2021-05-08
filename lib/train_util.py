@@ -67,6 +67,10 @@ def gen_mesh(opt, net, cuda, data, save_path, use_octree=True):
         save_img_path_SR2=save_path[:-4] + '_SR2.png'
 
         save_img_path_HR=save_path[:-4] + '_HR.png'
+        save_img_path_SR3=save_path[:-4] + '_SR3.png'
+        save_img_path_HR3=save_path[:-4] + '_HR3.png'
+        save_img_path_LR3 = save_path[:-4] + '_LR3.png'
+
         save_img_list = []
         for v in range(image_tensor.shape[0]):
             save_img = (np.transpose(image_tensor[v].detach().cpu().numpy(), (1, 2, 0)) * 0.5 + 0.5)[:, :, ::-1] * 255.0
@@ -85,6 +89,22 @@ def gen_mesh(opt, net, cuda, data, save_path, use_octree=True):
 
         save_image(img_SR.clamp(0, 1), save_img_path_SR)
         save_image(image_tensor_hr.clamp(0, 1), save_img_path_HR)
+
+        print(image_tensor_hr.shape)
+        save_img_list_hr=[]
+        for v in range(image_tensor_hr.shape[0]):
+            save_img_hr = (np.transpose(image_tensor_hr[v].detach().cpu().numpy(), (1, 2, 0)) * 0.5 + 0.5)[:, :, ::-1] * 255.0
+            save_img_list_hr.append(save_img_hr)
+        save_img_hr = np.concatenate(save_img_list_hr, axis=1)
+        Image.fromarray(np.uint8(save_img_hr[:,:,::-1])).save(save_img_path_HR3)
+        print(img_SR.detach().shape) 
+        save_img_list_sr=[]  
+        for v in range(img_SR.shape[0]):
+            save_img_sr = (np.transpose(img_SR[v].detach().cpu().numpy(), (1, 2, 0)) * 0.5 + 0.5)[:, :, ::-1] * 255.0
+            save_img_list_sr.append(save_img_sr)
+            
+        save_img_sr = np.concatenate(save_img_list_sr, axis=1)
+        Image.fromarray(np.uint8(save_img_sr[:,:,::-1])).save(save_img_path_SR3)
 
 
         verts_hr, faces_hr, _, _,verts_lr, faces_lr, _, _ = reconstruction(
