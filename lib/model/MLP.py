@@ -15,15 +15,12 @@ class MLP(nn.Module):
                  last_op=None):
         super(MLP, self).__init__()
 
-        self.filters = nn.ModuleList() #mi legge ModuleList? i think so perche e fi torch
+        self.filters = nn.ModuleList() 
         self.norms = nn.ModuleList()
-        #self.merge_layer = merge_layer if merge_layer > 0 else len(filter_channels) // 2
         self.res_layers = res_layers
         self.norm = norm
         self.num_views = num_views
         self.last_op = last_op
-        #qua update i filtri
-        #dovrebbe essere apposto, perche ho solo le mie opt e non quelle strane
         for l in range(0, len(filter_channels)-1):
             if l in self.res_layers:
                 self.filters.append(nn.Conv1d(
@@ -52,27 +49,18 @@ class MLP(nn.Module):
         y = feature
         tmpy = feature
        
-        #print(y.shape)
         for i, f in enumerate(self.filters):
             y = f(
                 y if i not in self.res_layers
                 else torch.cat([y, tmpy], 1)
             )
-            #print("ok2")
             if i != len(self.filters)-1:
-                #print("ok3")
                 if self.norm not in ['batch', 'group']:
-                    #print("ok4")
                     y = F.leaky_relu(y)
                 else:
-                    #print("ok5") #qyesti e' l'unico che non fa
                     y = F.leaky_relu(self.norms[i](y))         
-            #if i == self.merge_layer: #questo non dovrebbe servirmi
-            #    print("ok6")
-            #    phi = y.clone()
-
+            
         if self.last_op is not None:
-            #print("ok7")
             y = self.last_op(y)
 
         return y

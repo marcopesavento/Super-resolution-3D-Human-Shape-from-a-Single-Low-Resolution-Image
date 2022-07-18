@@ -1,7 +1,5 @@
-from .BasePIFuNet import BasePIFuNet
-from .VhullPIFuNet import VhullPIFuNet
+from .BaseSuRSNet import BaseSuRSNet
 from .ConvPIFuNet import ConvPIFuNet
-from .HGPIFuNet import HGPIFuNet
-from .ResBlkPIFuNet import ResBlkPIFuNet
+from .SuRSNet import SuRSNet
 from .MLP import MLP
 

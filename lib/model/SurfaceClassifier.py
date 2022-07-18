@@ -8,15 +8,16 @@ class SurfaceClassifier(nn.Module):
                 filter_channels, 
                 num_views=1, 
                 no_residual=True, 
+                res_layers=[],
                 last_op=None):
         super(SurfaceClassifier, self).__init__()
 
         self.filters = []
         self.num_views = num_views
         self.no_residual = no_residual
+        self.res_layers = res_layers
         filter_channels = filter_channels
         self.last_op = last_op
-        #print(last_op)
 
         if self.no_residual:
             for l in range(0, len(filter_channels) - 1):
@@ -27,7 +28,7 @@ class SurfaceClassifier(nn.Module):
                 self.add_module("conv%d" % l, self.filters[l])
         else:
             for l in range(0, len(filter_channels) - 1):
-                if 0 != l:
+                if l in self.res_layers:
                     self.filters.append(
                         nn.Conv1d(
                             filter_channels[l] + filter_channels[0],
@@ -60,8 +61,8 @@ class SurfaceClassifier(nn.Module):
                 
 
                 y = self._modules['conv' + str(i)](
-                    y if i == 0
-                    else torch.cat([y, tmpy], 1)
+                    torch.cat([y, tmpy], 1) if i in self.res_layers
+                    else y
                 )
             if i != len(self.filters) - 1:
                 y = F.leaky_relu(y)
@@ -75,7 +76,6 @@ class SurfaceClassifier(nn.Module):
                 ).mean(dim=1)
 
         if self.last_op:
-            ##print(self.last_op)
             y = self.last_op(y)
 
         return y

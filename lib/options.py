@@ -48,18 +48,18 @@ class BaseOptions():
         g_train.add_argument('--no_num_eval', action='store_true')
         
         g_train.add_argument('--resume_epoch', type=int, default=-1, help='epoch resuming the training')
-        g_train.add_argument('--continue_train', action='store_true', help='continue training: load the latest model')
+        g_train.add_argument('--continue_train', type=int, default=-1, help='0 if resuming the training')
 
         # Testing related
         g_test = parser.add_argument_group('Testing')
-        g_test.add_argument('--resolution', type=int, default=256, help='# of grid in mesh reconstruction')
+        g_test.add_argument('--resolution', type=int, default=512, help='# of grid in mesh reconstruction')
         g_test.add_argument('--test_folder_path', type=str, default=None, help='the folder of test image')
 
         # Sampling related
         g_sample = parser.add_argument_group('Sampling')
-        g_sample.add_argument('--sigma', type=float, default=5.0, help='perturbation standard deviation for positions')
+        g_sample.add_argument('--sigma', type=float, default=5, help='perturbation standard deviation for positions')
 
-        g_sample.add_argument('--num_sample_inout', type=int, default=5000, help='# of sampling points')
+        g_sample.add_argument('--num_sample_inout', type=int, default=6000, help='# of sampling points')
         g_sample.add_argument('--num_sample_color', type=int, default=0, help='# of sampling points')
 
         g_sample.add_argument('--z_size', type=float, default=200.0, help='z normalization factor')
@@ -85,10 +85,10 @@ class BaseOptions():
         # Classification General
         g_model.add_argument('--mlp_norm', type=str, default='group', help='normalization for volume branch')
 
-        g_model.add_argument('--mlp_dim_lr', nargs='+', default=[513, 1024, 512, 256, 128, 1], type=int,
-                             help='# of dimensions of mlp_lr')
-        g_model.add_argument('--mlp_dim_hr', nargs='+', default=[514, 1024, 512, 256, 128, 1], type=int,
-                             help='# of dimensions of mlp_lr')
+        g_model.add_argument('--mlp_dim_lr', nargs='+', default=[321, 1024, 512, 256, 128, 1], type=int,
+                             help='# of dimensions of mlp_mr')
+        g_model.add_argument('--mlp_dim_hr', nargs='+', default=[322, 1024, 512, 256, 128, 1], type=int,
+                             help='# of dimensions of mlp_sr')
         g_model.add_argument('--mlp_dim_color', nargs='+', default=[513, 1024, 512, 256, 128, 3],
                              type=int, help='# of dimensions of color mlp')
         g_model.add_argument('--mlp_res_layers_lr', nargs='+', default=[2,3,4], type=int,
@@ -100,6 +100,8 @@ class BaseOptions():
                              help='using tanh after last conv of image_filter network')
 
         # for train
+        parser.add_argument('--scale_pifu', type=float, default=0.01, help='rescale the model')
+
         parser.add_argument('--random_flip', action='store_true', help='if random flip')
         parser.add_argument('--random_trans', action='store_true', help='if random flip')
         parser.add_argument('--random_scale', action='store_true', help='if random flip')
@@ -112,9 +114,15 @@ class BaseOptions():
         parser.add_argument('--color_loss_type', type=str, default='l1', help='mse | l1')
         parser.add_argument('--losses', type=str, default='l1', help='mse | l1')
         parser.add_argument('--residual', action='store_true', help='apply residual block in super resolution')
-        parser.add_argument('--mlp1', type=float, default=0.01, help='weight for mlp1 error')
+        parser.add_argument('--mlp1', type=float, default=1.0, help='weight for mlp1 error')
         parser.add_argument('--mlp2', type=float, default=1.0, help='weight for mlp2 error')
         parser.add_argument('--srweight', type=float, default=1.0, help='weight for reconstruction error')
+        parser.add_argument('--dispweight', type=float, default=1.0, help='weight for displacement error')
+        parser.add_argument('--b_min', nargs='+', type=float, default=[-128., -28., -128.], help='weight for displacement error')
+        parser.add_argument('--b_max', nargs='+', default=[128., 228., 128.], help='weight for displacement error')
+
+        parser.add_argument('--disp_error', type=int, default=1, help='1,2,3,4,5,6')
+        
         parser.add_argument('--n_train', type=int,  default=300,
                             help='numbe of trainingdatat.')
         parser.add_argument('--n_val', type=int,  default=60,
@@ -155,7 +163,14 @@ class BaseOptions():
         # for single image reconstruction
         parser.add_argument('--mask_path', type=str, help='path for input mask')
         parser.add_argument('--img_path', type=str, help='path for input image')
+        parser.add_argument('--num_samples', type=int, default=50000,
+                    help='number of sample point for testing')
+        parser.add_argument('--threshold', type=float, default=0.05,
+                    help='threshold for testing')
+        parser.add_argument('--with_color', action='store_true', help='save mesh with color')
+        parser.add_argument('--both_color', action='store_true', help='save mesh both')
 
+        parser.add_argument('--change_weights', action='store_true', help='change weight loss')
         # aug
         group_aug = parser.add_argument_group('aug')
         group_aug.add_argument('--aug_alstd', type=float, default=0.0, help='augmentation pca lighting alpha std')

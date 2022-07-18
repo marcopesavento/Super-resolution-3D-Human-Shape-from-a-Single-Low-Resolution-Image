@@ -5,24 +5,14 @@ from .sdf import create_grid, eval_grid_octree, eval_grid
 from skimage import measure
 
 
-def reconstruction(net, cuda, calib_tensor,
+def reconstruction(opt,net, cuda, calib_tensor,
                    resolution, b_min, b_max,
-                   use_octree=False, num_samples=10000, transform=None):
+                   use_octree=False, num_samples=50000, transform=None):
     '''
-    Reconstruct meshes from sdf predicted by the network.
-    :param net: a BasePixImpNet object. call image filter beforehead.
-    :param cuda: cuda device
-    :param calib_tensor: calibration tensor
-    :param resolution: resolution of the grid cell
-    :param b_min: bounding box corner [x_min, y_min, z_min]
-    :param b_max: bounding box corner [x_max, y_max, z_max]
-    :param use_octree: whether to use octree acceleration
-    :param num_samples: how many points to query each gpu iteration
-    :return: marching cubes results.
+    
     '''
     # First we create a grid by resolution
     # and transforming matrix for grid coordinates to real world xyz
-    #print(resolution)
     coords, mat = create_grid(resolution, resolution, resolution,
                               b_min, b_max, transform=transform)
     
@@ -32,35 +22,32 @@ def reconstruction(net, cuda, calib_tensor,
         points = np.repeat(points, net.num_views, axis=0)
         
         samples = torch.from_numpy(points).to(device=cuda).float()
-        
-        net.query_lr(samples, calib_tensor)
-        net.query_hr()
-        pred_hr, pred_lr = net.get_preds() #qua non so cosa faccia???
-        torch.set_printoptions(threshold=10000)
-        
+        net.query_mr(samples, calib_tensor)
+        net.query_sr(samples, calib_tensor)
+        pred_hr, pred_lr = net.get_preds()
         return pred_hr.detach().cpu().numpy(), pred_lr.detach().cpu().numpy()
 
     # Then we evaluate the grid
     if use_octree:
-        sdf_hr,sdf_lr = eval_grid_octree(coords, eval_func, num_samples=num_samples)
+        sdf_hr,sdf_lr = eval_grid_octree(opt,coords, eval_func, num_samples=num_samples)
     else:
         sdf_hr,sdf_lr = eval_grid(coords, eval_func, num_samples=num_samples)
 
     # Finally we do marching cubes
-    try:
-        verts_hr, faces_hr, normals_hr, values_hr = measure.marching_cubes_lewiner(sdf_hr, 0.5)
-        # transform verts into world coordinate system
-        verts_hr = np.matmul(mat[:3, :3], verts_hr.T) + mat[:3, 3:4]
-        verts_hr = verts_hr.T
+    
+    count=0
+    
+    verts_hr, faces_hr, normals_hr, values_hr = measure.marching_cubes_lewiner(sdf_hr, 0.5)
+    # transform verts into world coordinate system
+    verts_hr = np.matmul(mat[:3, :3], verts_hr.T) + mat[:3, 3:4]
+    verts_hr = verts_hr.T
 
-        verts_lr, faces_lr, normals_lr, values_lr = measure.marching_cubes_lewiner(sdf_lr, 0.5)
-        # transform verts into world coordinate system
-        verts_lr = np.matmul(mat[:3, :3], verts_lr.T) + mat[:3, 3:4]
-        verts_lr = verts_lr.T
-        return verts_hr, faces_hr, normals_hr, values_hr,verts_lr, faces_lr, normals_lr, values_lr
-    except:
-        print('error cannot marching cubes')
-        return -1
+    verts_lr, faces_lr, normals_lr, values_lr = measure.marching_cubes_lewiner(sdf_lr, 0.5)
+    # transform verts into world coordinate system
+    verts_lr = np.matmul(mat[:3, :3], verts_lr.T) + mat[:3, 3:4]
+    verts_lr = verts_lr.T
+    return verts_hr, faces_hr, normals_hr, values_hr,verts_lr, faces_lr, normals_lr, values_lr
+
 
 
 def save_obj_mesh(mesh_path, verts, faces):

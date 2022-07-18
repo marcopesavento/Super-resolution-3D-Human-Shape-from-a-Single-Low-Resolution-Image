@@ -1,13 +1,13 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .BasePIFuNet import BasePIFuNet
+from .BaseSuRSNet import BaseSuRSNet
 from .SurfaceClassifier import SurfaceClassifier
 from .DepthNormalizer import DepthNormalizer
 from .ConvFilters import *
 from ..net_util import init_net
 
-class ConvPIFuNet(BasePIFuNet):
+class ConvPIFuNet(BaseSuRSNet):
     '''
     Conv Piximp network is the standard 3-phase network that we will use.
     The image filter is a pure multi-layer convolutional network,

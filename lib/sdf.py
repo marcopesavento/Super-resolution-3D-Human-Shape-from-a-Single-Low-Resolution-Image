@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def create_grid(resX, resY, resZ, b_min=np.array([0, 0, 0]), b_max=np.array([1, 1, 1]), transform=None):
+def create_grid(resX, resY, resZ, b_min=np.array([-1,-1,-1]), b_max=np.array([1, 1, 1]), transform=None):
     '''
     Create a dense grid of given resolution and bounding box
     :param resX: resolution along X axis
@@ -35,7 +35,6 @@ def batch_eval(points, eval_func, num_samples=512 * 512 * 512):
     sdf_hr=np.zeros(num_pts)
 
     num_batches = num_pts // num_samples
-    
     for i in range(num_batches):
         sdf_hr[i * num_samples:i * num_samples + num_samples],sdf_lr[i * num_samples:i * num_samples + num_samples] = eval_func(
             points[:, i * num_samples:i * num_samples + num_samples])
@@ -43,7 +42,6 @@ def batch_eval(points, eval_func, num_samples=512 * 512 * 512):
     if num_pts % num_samples:
         
         sdf_hr[num_batches * num_samples:],sdf_lr[num_batches * num_samples:] = eval_func(points[:, num_batches * num_samples:])
-    print(sdf_hr.shape,sdf_lr.shape)
     return sdf_hr, sdf_lr
 
 
@@ -54,10 +52,10 @@ def eval_grid(coords, eval_func, num_samples=512 * 512 * 512):
     return sdf_hr.reshape(resolution),sdf_lr.reshape(resolution)
 
 
-def eval_grid_octree(coords, eval_func,
-                     init_resolution=64, threshold=0.01,
+def eval_grid_octree(opt,coords, eval_func,
+                     init_resolution=64,
                      num_samples=512 * 512 * 512):
-    resolution = coords.shape[1:4]
+    resolution = coords.shape[1:4]#256 256 256
 
     sdf_lr = np.zeros(resolution)
     sdf_hr = np.zeros(resolution)
@@ -65,7 +63,7 @@ def eval_grid_octree(coords, eval_func,
     dirty = np.ones(resolution, dtype=np.bool)
     grid_mask = np.zeros(resolution, dtype=np.bool)
 
-    reso = resolution[0] // init_resolution
+    reso = resolution[0] // init_resolution #4
 
     while reso > 0:
         # subdivide the grid
@@ -77,7 +75,6 @@ def eval_grid_octree(coords, eval_func,
 
         sdf_hr[test_mask],sdf_lr[test_mask] = batch_eval(points, eval_func, num_samples=num_samples)
         dirty[test_mask] = False
-
         # do interpolation
         if reso <= 1:
             break
@@ -99,7 +96,7 @@ def eval_grid_octree(coords, eval_func,
                     v_min = v.min()
                     v_max = v.max()
                     # this cell is all the same
-                    if (v_max - v_min) < threshold:
+                    if (v_max - v_min) < opt.threshold:
                         sdf_hr[x:x + reso, y:y + reso, z:z + reso] = (v_max + v_min) / 2
                         dirty[x:x + reso, y:y + reso, z:z + reso] = False
                     
@@ -115,7 +112,7 @@ def eval_grid_octree(coords, eval_func,
                     v_min_lr = v_lr.min()
                     v_max_lr = v_lr.max()
                     # this cell is all the same
-                    if (v_max_lr - v_min_lr) < threshold:
+                    if (v_max_lr - v_min_lr) < opt.threshold:
                         sdf_lr[x:x + reso, y:y + reso, z:z + reso] = (v_max_lr + v_min_lr) / 2
                         dirty[x:x + reso, y:y + reso, z:z + reso] = False
         reso //= 2
