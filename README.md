@@ -4,7 +4,7 @@ Note that the code of this repo is heavily based on [PIFU](https://shunsukesaito
 [Project Page](https://marcopesavento.github.io/SuRS/)
 
 ## Contents
-- [Requirements and dependencies](#requirements-and-dependencies)
+- [Environment](#Environment)
 - [Dataset creation](#datasets)
 - [Train](#train)
 - [Test](#test)
@@ -12,28 +12,12 @@ Note that the code of this repo is heavily based on [PIFU](https://shunsukesaito
 - [Contact](#contact)
 - [Acknowledgments](#acknowledgments)
 
-## Requirements and dependencies
-* python 3.7
-**packages**
-* pytorch >= 1.3.1
-* torchvision >= 0.4.0
-* pillow >= 6.2.1
-* tqdm >= 4.38.0
-* future >= 0.18.2
-* tensorboard >= 2.0.1
-* scikit-learn >= 0.21.3
-* kornia >= 0.1.4.post2
-* numpy >= 1.17.4
-* pandas >= 0.25.3
-* googledrivedownloader >= 0.4
-* opencv-python >= 4.1.1.26
-
-**dev-packages**
-* ipython >= 7.9.0
-* pylint >= 2.4.4
-* autopep8 >= 1.4.4
-* flake8 >= 3.7.9
-* jupyterlab >= 1.2.3
+## Environment
+Create a conda environment from environment.yml file:
+```shell
+conda env create -f environment.yml
+```
+The first line of the yml file sets the new environment's name.
 
 
 ## Dataset creation
