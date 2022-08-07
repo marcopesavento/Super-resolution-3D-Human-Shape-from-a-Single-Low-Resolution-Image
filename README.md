@@ -41,7 +41,7 @@ Note that the code of this repo is heavily based on [PIFU](https://shunsukesaito
 1. Download [T-Human2.0](https://github.com/ytrock/THuman2.0-Dataset) 
 2. Process the .obj file to make the mesh watertight with the [Fast Winding Number](https://www.dgp.toronto.edu/projects/fast-winding-numbers/) algorithm
 3. Render the training dataset following [PIFU](https://shunsukesaito.github.io/PIFu/)
-4. For Testing set,create two folders and named "input_masks" the folder that contains the mask of the image and "input_images" the folder that contains the RGB input images.
+4. For Testing set,create two folders and named "mask_final" the folder that contains the mask of the image and "image_final" the folder that contains the RGB input images.
 
 ## Train
 
