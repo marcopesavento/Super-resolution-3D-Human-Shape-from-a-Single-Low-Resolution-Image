@@ -36,11 +36,16 @@ Note that the code of this repo is heavily based on [PIFU](https://shunsukesaito
 * jupyterlab >= 1.2.3
 
 
-## DATASET CREATION
+## Dataset creation
 
 1. Download [T-Human2.0](https://github.com/ytrock/THuman2.0-Dataset) 
 2. Process the .obj file to make the mesh watertight with the [Fast Winding Number](https://www.dgp.toronto.edu/projects/fast-winding-numbers/) algorithm
 3. Render the training dataset following [PIFU](https://shunsukesaito.github.io/PIFu/)
 
+
+## Test
+```shell
+$ python eval_SuRS.py --freq_save_ply 25 --residual --dataroot {path_to_input_images} --loadSize {input_image_size * 2} --results_path   {path_to_outdir} --num_samples 50000 --threshold 0.05 --num_threads 6 --resolution 512 --load_netG_checkpoint_path {path_to_checkpoints}/netG_epoch_12 --b_min -0.5 -0.5 -0.5 --b_max 0.5 0.5 0.5
+```
 # add instruction to train and test SuRS (code is already uploaded)
 # add environment.yml
