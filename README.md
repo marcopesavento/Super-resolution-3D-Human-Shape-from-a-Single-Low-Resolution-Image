@@ -38,9 +38,9 @@ Note that the code of this repo is heavily based on [PIFU](https://shunsukesaito
 
 ## DATASET CREATION
 
-* Download [T-Human2.0](https://github.com/ytrock/THuman2.0-Dataset) 
-* Process the .obj file to make the mesh watertight with the [Fast Winding Number](https://www.dgp.toronto.edu/projects/fast-winding-numbers/) algorithm
-* Render the training dataset following [PIFU](https://shunsukesaito.github.io/PIFu/)
+1. Download [T-Human2.0](https://github.com/ytrock/THuman2.0-Dataset) 
+2. Process the .obj file to make the mesh watertight with the [Fast Winding Number](https://www.dgp.toronto.edu/projects/fast-winding-numbers/) algorithm
+3. Render the training dataset following [PIFU](https://shunsukesaito.github.io/PIFu/)
 
 # add instruction to train and test SuRS (code is already uploaded)
 # add environment.yml
