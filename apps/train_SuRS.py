@@ -151,13 +151,13 @@ def train(opt):
             eta = ((iter_net_time - epoch_start_time) / (train_idx + 1)) * len(train_data_loader) - (
                     iter_net_time - epoch_start_time)
 
-            #if train_idx % opt.freq_plot == 0:
-                #print(
-                #    'Name: {0} | Epoch: {1} | {2}/{3} | Err: {4:.06f} | Err_SR: {5:.06f} | Err_mlp1: {6:.06f} | Err_mlp2: {7:.06f}| Err_disp: {8:.06f}  | LR: {9:.06f} | Sigma: {10:.02f} | dataT: {11:.05f} | netT: {12:.05f} | ETA: {13:02d}:{14:02d}'.format(
-                 #       opt.name, epoch, train_idx, len(train_data_loader), error.item(), error_SR.item(), error_mlp1.item(), error_mlp2.item(), error_disp.item(), lr, opt.sigma,
-                 #                                                           iter_start_time - iter_data_time,
-                #                                                            iter_net_time - iter_start_time, int(eta // 60),
-                 #       int(eta - 60 * (eta // 60))))
+            if train_idx % opt.freq_plot == 0:
+                print(
+                    'Name: {0} | Epoch: {1} | {2}/{3} | Err: {4:.06f}  | LR: {9:.06f} | Sigma: {10:.02f} | dataT: {11:.05f} | netT: {12:.05f} | ETA: {13:02d}:{14:02d}'.format(
+                        opt.name, epoch, train_idx, len(train_data_loader), error.item(), lr, opt.sigma,
+                                                                            iter_start_time - iter_data_time,
+                                                                            iter_net_time - iter_start_time, int(eta // 60),
+                        int(eta - 60 * (eta // 60))))
 
             if train_idx % opt.freq_save == 0 and train_idx != 0:
                 torch.save(netG.state_dict(), '%s/%s/netG_latest' % (opt.checkpoints_path, opt.name))
