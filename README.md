@@ -37,5 +37,28 @@ $ python train_SuRS.py --freq_save_ply 25 --residual --dataroot {path_to_input_d
 ```shell
 $ python eval_SuRS.py --freq_save_ply 25 --residual --dataroot {path_to_input_data} --loadSize {input_image_size * 2} --results_path   {path_to_outdir} --num_samples 50000 --threshold 0.05 --num_threads 6 --resolution 512 --load_netG_checkpoint_path {path_to_checkpoints}/netG_epoch_12 --b_min -0.5 -0.5 -0.5 --b_max 0.5 0.5 0.5
 ```
-# add instruction to train and test SuRS (code is already uploaded)
-# add environment.yml
+
+## Citation
+If you find the code useful in your research, please consider citing the paper.
+
+```
+@misc{pesavento2021attentionbased,
+      title={Attention-based Multi-Reference Learning for Image Super-Resolution}, 
+      author={Marco Pesavento and Marco Volino and Adrian Hilton},
+      year={2021},
+      eprint={2108.13697},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
+
+}
+```
+## Contacts
+
+If you meet any problems, please describe them in issues or contact:
+
+* Marco Pesavento: m.pesavento@surrey.ac.uk
+
+## Acknowledgments
+
+This research was supported by UKRI EPSRC Platform Grant EP/P022529/1.
+
