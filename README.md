@@ -42,13 +42,7 @@ $ python eval_SuRS.py --freq_save_ply 25 --residual --dataroot {path_to_input_da
 If you find the code useful in your research, please consider citing the paper.
 
 ```
-@misc{pesavento2021attentionbased,
-      title={Attention-based Multi-Reference Learning for Image Super-Resolution}, 
-      author={Marco Pesavento and Marco Volino and Adrian Hilton},
-      year={2021},
-      eprint={2108.13697},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV}
+ARXIVE when submitted
 
 }
 ```
