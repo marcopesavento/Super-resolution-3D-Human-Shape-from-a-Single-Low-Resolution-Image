@@ -48,7 +48,7 @@ ARXIVE when submitted
 ```
 ## Contacts
 
-If you meet any problems, please describe them in issues or contact:
+If you meet any problems, please contact:
 
 * Marco Pesavento: m.pesavento@surrey.ac.uk
 
