@@ -41,11 +41,17 @@ Note that the code of this repo is heavily based on [PIFU](https://shunsukesaito
 1. Download [T-Human2.0](https://github.com/ytrock/THuman2.0-Dataset) 
 2. Process the .obj file to make the mesh watertight with the [Fast Winding Number](https://www.dgp.toronto.edu/projects/fast-winding-numbers/) algorithm
 3. Render the training dataset following [PIFU](https://shunsukesaito.github.io/PIFu/)
+4. For Testing set,create two folders and named "input_masks" the folder that contains the mask of the image and "input_images" the folder that contains the RGB input images.
 
+## Train
+
+```shell 
+$ python train_SuRS.py --freq_save_ply 25 --residual --dataroot {path_to_input_data} --results_path {path_to_outdir} --random_flip --random_trans --random_scale --num_samples 50000 --threshold 0.05 --b_min -0.5 -0.5 -0.5 --b_max 0.5 0.5 0.5 --sigma 0.06 --resolution 512 --loadSize {input_image_size * 2} 
+```
 
 ## Test
 ```shell
-$ python eval_SuRS.py --freq_save_ply 25 --residual --dataroot {path_to_input_images} --loadSize {input_image_size * 2} --results_path   {path_to_outdir} --num_samples 50000 --threshold 0.05 --num_threads 6 --resolution 512 --load_netG_checkpoint_path {path_to_checkpoints}/netG_epoch_12 --b_min -0.5 -0.5 -0.5 --b_max 0.5 0.5 0.5
+$ python eval_SuRS.py --freq_save_ply 25 --residual --dataroot {path_to_input_data} --loadSize {input_image_size * 2} --results_path   {path_to_outdir} --num_samples 50000 --threshold 0.05 --num_threads 6 --resolution 512 --load_netG_checkpoint_path {path_to_checkpoints}/netG_epoch_12 --b_min -0.5 -0.5 -0.5 --b_max 0.5 0.5 0.5
 ```
 # add instruction to train and test SuRS (code is already uploaded)
 # add environment.yml
