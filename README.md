@@ -42,8 +42,13 @@ $ python eval_SuRS.py --freq_save_ply 25 --residual --dataroot {path_to_input_da
 If you find the code useful in your research, please consider citing the paper.
 
 ```
-ARXIVE when submitted
-
+@inproceedings{pesavento2022super,
+  title={Super-Resolution 3D Human Shape from a Single Low-Resolution Image},
+  author={Pesavento, Marco and Volino, Marco and Hilton, Adrian},
+  booktitle={Computer Vision--ECCV 2022: 17th European Conference, Tel Aviv, Israel, October 23--27, 2022, Proceedings, Part II},
+  pages={447--464},
+  year={2022},
+  organization={Springer}
 }
 ```
 ## Contacts
@@ -54,5 +59,5 @@ If you meet any problems, please contact:
 
 ## Acknowledgments
 
-This research was supported by UKRI EPSRC Platform Grant EP/P022529/1.
+This research was supported by UKRI EPSRC Platform Grant EP/P022529/1 and it made use of time on Tier 2 HPC facility JADE2, funded by EPSRC (EP/T022205/1).
 
